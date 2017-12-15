@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <!--<canvas id="myCanvas" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; cursor: none" ></canvas>-->
+    <canvas id="myCanvas" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:0 "></canvas>
+    <!--<canvas id="myCanvas3" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:1 "></canvas>-->
+    <canvas id="myCanvas2" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:2 "></canvas>
+    <script>
+        //credit to https://mdn.github.io/dom-examples/pointer-lock/ for pointer lock
+        //setting up canvas
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        //var c3 = document.getElementById("myCanvas3");
+        //var ctx3 = c3.getContext("2d");
+        var c2 = document.getElementById("myCanvas2");
+        var ctx2 = c2.getContext("2d");
+        //resize window
+        function canvasResize() {
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+            c2.width = window.innerWidth;
+            c2.height = window.innerHeight;
+            //c3.width = window.innerWidth;
+            //c3.height = window.innerHeight;
+        }
+        window.addEventListener("resize", canvasResize, false);
+        //pointer lock
+        c.requestPointerLock = c.requestPointerLock ||
+            c.mozRequestPointerLock ||
+            c.webkitRequestPointerLock;
+        // Ask the browser to lock the pointer
+        c.requestPointerLock();
+
+        // Ask the browser to release the pointer
+        document.exitPointerLock = document.exitPointerLock ||
+            document.mozExitPointerLock ||
+            document.webkitExitPointerLock;
+        document.exitPointerLock();
+        //setting up keyboard
+        var keys = [];
+        var count1;
+        var count2;
+        var count3;
+        var fireCount = 0;
+        var loopCount = 0;
+        var secondsCount = 0;
+        var pastSecond;
+        var whatTime = new Date();
+        var thisSecond;
+        var FPS;
+        var speedRegulator;
+        for (count1 = 0; 256 > count1; count1++) {
+            keys.push(false);
+        }
+        window.addEventListener("keydown", function (e) {
+            keys[e.keyCode] = true;
+        }, false)
+        window.addEventListener("keyup", function (e) {
+            keys[e.keyCode] = false;
+        }, false)
+        //mouse
+        c2.onclick = function () {
+            c.requestPointerLock();
+        };
+
+        function changeCallback() {
+            if (document.pointerLockElement === requestedElement ||
+                document.mozPointerLockElement === requestedElement ||
+                document.webkitPointerLockElement === requestedElement) {
+                // Pointer was just locked
+                // Enable the mousemove listener
+                document.addEventListener("mousemove", this.moveCallback, false);
+            } else {
+                // Pointer was just unlocked
+                // Disable the mousemove listener
+                document.removeEventListener("mousemove", this.moveCallback, false);
+                this.unlockHook(this.element);
+            }
+        }
+
+        function moveCallback(e) {
+            var movementX = e.movementX ||
+                e.mozMovementX ||
+                e.webkitMovementX ||
+                0,
+                movementY = e.movementY ||
+                    e.mozMovementY ||
+                    e.webkitMovementY ||
+                    0;
+            yDir = yDir + movementX / 105;
+            xDir = xDir + movementY / 105;
+        }
+
+        // Hook pointer lock state change events
+        document.addEventListener('pointerlockchange', changeCallback, false);
+        document.addEventListener('mozpointerlockchange', changeCallback, false);
+        document.addEventListener('webkitpointerlockchange', changeCallback, false);
+
+        // Hook mouse move events
+        document.addEventListener("mousemove", this.moveCallback, false);
+        //mouse clicks
+        var mouseHoldIdk = 0;
+        var mouseIsDown;
+        function mouseDown(e) {
+            mouseIsDown = 1
+        }
+        function mouseUp(e) {
+            mouseIsDown = 0
+        }
+        c.addEventListener("mousedown", mouseDown, false);
+        c.addEventListener("mouseup", mouseUp, false);
+        //position variables
+        var xPos = 0;
+        var yPos = 0;
+        var zPos = 0;
+        var xVel = 0;
+        var yVel = 0;
+        var zVel = 0;
+        //direction variables
+        var xDir = 0;
+        var yDir = 0;
+        var zDir = 0;
+        //all points in the 3d world
+        //var xVals = [2, 4, 2, 4, 2, 4, 2, 4];
+        //var yVals = [2, 2, 4, 4, 2, 2, 4, 4];
+        //var zVals = [2, 2, 2, 2, 4, 4, 4, 4];
+        //var idS = [0, 1, 2, 3, 4, 5, 6, 7];
+        var xVals = [];
+        var yVals = [];
+        var zVals = [];
+        var idS = [];
+        var newID = 0;
+        //rotated points stored so calculations don't have to be made over and over again
+        var xRot = [];
+        var yRot = [];
+        var zRot = [];
+        //all lines in the world
+        //var lines = [[0, 1, 3, 2, 0], [4, 5, 7, 6, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+        var lines = [];
+        lines = [];
+        //all planes in the world
+        //var planes = [[0, 1, 3, 2, 0], [4, 5, 7, 6, 4]];
+        var planes = [];
+        //distances of lines and planes
+        var dists = [];
+        //disables rendering objects if they are behind the viewport
+        var renderBehind = [];
+        var shouldIRenderBehind;
+        //color brightness falloff (how far you can see something)
+        var colorFalloffMultiplier = [];
+        var colorFalloffID = [];
+        //render 3d points
+        var renderPoints = [];
+        //temporary stuff to make calculations easier
+        var xTemp
+        var yTemp
+        var zTemp
+        var xTemp2
+        var yTemp2
+        var zTemp2
+        //weird variables for drawing stuff
+        var fovThing = 500;
+        var stopDrawingZ = -5;
+        //bullets
+        var bullets = [];
+        //enemies
+        var enemies = [];
+        //particles
+        var particles = [];
+        var particleAlpha = [];
+        //jetpack fuel
+        var jetpackFuel = 100;
+        var jetpackFuelVel = 0;
+        //render style
+        var renderStyle = 1;
+        //hitpoints
+        var hitPoints = 100;
+        var crackedGlassEffect = [];
+        //draw a point
+        function drawPoint(x, y, z, particleOpacity) {
+            if (particleOpacity != undefined) {
+                particleAlpha.push(particleOpacity);
+            } else {
+                particleAlpha.push(1);
+            }
+            xVals.push(x);
+            yVals.push(y);
+            zVals.push(z);
+            idS.push(newID);
+            newID++;
+        }
+        //rectangular prism function
+        function rectPrism(x1, y1, z1, x2, y2, z2, line, plane, rot1, rot2, renderStuffBehind, colorFalloff) {
+            var idRef = newID;
+            var xTemp3;
+            var yTemp3;
+            var ZTemp3;
+            var x3;
+            var y3;
+            var z3;
+            var x5;
+            var y5;
+            var z5;
+            var allX = [x1, x1 + x2, x1, x1 + x2, x1, x1 + x2, x1, x1 + x2];
+            var allY = [y1, y1, y1 + y2, y1 + y2, y1, y1, y1 + y2, y1 + y2];
+            var allZ = [z1, z1, z1, z1, z1 + z2, z1 + z2, z1 + z2, z1 + z2];
+            var renderCount = 0
+            for (renderCount = 0; 8 > renderCount; renderCount++) {
+                xTemp3 = x1 + x2 / 2;
+                yTemp3 = y1 + y2 / 2;
+                zTemp3 = z1 + z2 / 2;
+                x3 = allX[renderCount] - xTemp3;
+                y3 = allY[renderCount] - yTemp3;
+                z3 = allZ[renderCount] - zTemp3;
+                x3 = x3 * (Math.random() * mouseHoldIdk / 50 + 1);
+                y3 = y3 * (Math.random() * mouseHoldIdk / 50 + 1);
+                z3 = z3 * (Math.random() * mouseHoldIdk / 50 + 1);
+                //yaw direction
+                x5 = x3 * Math.cos(rot1) - z3 * Math.sin(rot1);
+                z5 = z3 * Math.cos(rot1) + x3 * Math.sin(rot1);
+                //pitch direction
+                y5 = y3 * Math.cos(rot2) - z5 * Math.sin(rot2);
+                z5 = z5 * Math.cos(rot2) + y3 * Math.sin(rot2);
+                //allX[renderCount] = x5 + xTemp3;
+                //allY[renderCount] = y5 + yTemp3;
+                //allZ[renderCount] = z5 + zTemp3;
+                drawPoint(x5 + xTemp3, y5 + yTemp3, z5 + zTemp3);
+                if (renderStuffBehind == false) {
+                    renderBehind.push(idRef + renderCount);
+                }
+                colorFalloffMultiplier.push(colorFalloff);
+                colorFalloffID.push(idRef + renderCount);
+            }
+            if (line == true) {
+                lines.push([idRef, idRef + 1]);
+                lines.push([idRef + 1, idRef + 3]);
+                lines.push([idRef + 3, idRef + 2]);
+                lines.push([idRef + 2, idRef]);
+                lines.push([idRef + 4, idRef + 5]);
+                lines.push([idRef + 5, idRef + 7]);
+                lines.push([idRef + 7, idRef + 6]);
+                lines.push([idRef + 6, idRef + 4]);
+                lines.push([idRef, idRef + 4]);
+                lines.push([idRef + 1, idRef + 5]);
+                lines.push([idRef + 2, idRef + 6]);
+                lines.push([idRef + 3, idRef + 7]);
+            }
+            if (plane == true) {
+                planes.push([idRef, idRef + 1, idRef + 3, idRef + 2, idRef]);
+                planes.push([idRef + 4, idRef + 5, idRef + 7, idRef + 6, idRef + 4]);
+                planes.push([idRef + 1, idRef + 3, idRef + 7, idRef + 5, idRef + 1]);
+                planes.push([idRef, idRef + 2, idRef + 6, idRef + 4, idRef]);
+                planes.push([idRef + 2, idRef + 3, idRef + 7, idRef + 6, idRef + 2]);
+                planes.push([idRef, idRef + 1, idRef + 5, idRef + 4, idRef]);
+            }
+        }
+        //plane array function
+        function planeArray(x1, y1, z1, x2, z2, cellSize, line, plane, renderStuffBehind, colorFalloff) {
+            var idRef = newID;
+            var renderCount;
+            var renderCount2;
+            for (renderCount = 0; z2 > renderCount; renderCount++) {
+                for (renderCount2 = 0; x2 > renderCount2; renderCount2++) {
+                    drawPoint(x1 + renderCount2 * cellSize + (Math.random() * mouseHoldIdk / 25) - mouseHoldIdk / 50, y1 + (Math.random() * mouseHoldIdk / 25) - mouseHoldIdk / 50, z1 + renderCount * cellSize + (Math.random() * mouseHoldIdk / 25) - mouseHoldIdk / 50);
+                    if (renderCount < z2 - 1 && renderCount2 < x2 - 1) {
+                        if (line == true) {
+                            lines.push([idRef + x2 * renderCount + renderCount2, idRef + x2 * renderCount + renderCount2 + 1]);
+                            lines.push([idRef + x2 * renderCount + renderCount2, idRef + x2 * renderCount + renderCount2 + x2]);
+                        }
+                        if (plane == true) {
+                            planes.push([idRef + x2 * renderCount + renderCount2, idRef + x2 * renderCount + renderCount2 + 1, idRef + x2 * renderCount + renderCount2 + x2 + 1, idRef + x2 * renderCount + renderCount2 + x2, idRef + x2 * renderCount + renderCount2]);
+                        }
+                    }
+                    if (line == true) {
+                        if (renderCount >= z2 - 1 && renderCount2 != x2 - 1) {
+                            lines.push([idRef + x2 * renderCount + renderCount2, idRef + x2 * renderCount + renderCount2 + 1]);
+                        }
+                        if (renderCount2 <= x2 - 1 && renderCount != z2 - 1) {
+                            lines.push([idRef + x2 * renderCount + renderCount2, idRef + x2 * renderCount + renderCount2 + x2]);
+                        }
+                    }
+                    if (renderStuffBehind == false) {
+                        renderBehind.push(idRef + x2 * renderCount + renderCount2);
+                    }
+                    colorFalloffMultiplier.push(colorFalloff);
+                    colorFalloffID.push(idRef + x2 * renderCount + renderCount2);
+                }
+            }
+        }
+        function crackedGlass() {
+            if (crackedGlassEffect.length < Math.random() * 8 || Math.random() < 0.08) {
+                var side = Math.floor(Math.random() * 4)
+                if (side == 0) {
+                    crackedGlassEffect.push({ dir: Math.PI / 2, link: -1, x: Math.random() * c.width, y: 0, branches: 0 });
+                } else if (side == 1) {
+                    crackedGlassEffect.push({ dir: Math.PI, link: -1, x: c.width, y: Math.random() * c.height, branches: 0 });
+                } else if (side == 2) {
+                    crackedGlassEffect.push({ dir: 3 * Math.PI / 2, link: -1, x: Math.random() * c.width, y: c.height, branches: 0 });
+                } else if (side == 3) {
+                    crackedGlassEffect.push({ dir: 0, link: -1, x: 0, y: Math.random() * c.height, branches: 0 });
+                }
+            } else {
+                var branchSuccess = 0;
+                for (count3 = 0; 20 > count3 && branchSuccess == 0; count3++) {
+                    var branch = Math.floor(Math.random() * (crackedGlassEffect.length - 1));
+                    if (Math.random() < 1 / Math.pow(5, crackedGlassEffect[branch].branches)) {
+                        if (crackedGlassEffect[branch].branches == 0) {
+                            var whatDir = crackedGlassEffect[branch].dir + Math.random() / 2 - 0.25;
+                        } else {
+                            var whatDir = crackedGlassEffect[branch].dir + Math.random() * Math.PI / 1.5 - Math.PI / 3;
+                        }
+                        var dist = 50 + Math.random() * 75;
+                        crackedGlassEffect.push({ dir: whatDir, link: branch, x: Math.cos(whatDir) * dist + crackedGlassEffect[branch].x, y: Math.sin(whatDir) * dist + crackedGlassEffect[branch].y, branches: 0 });
+                        crackedGlassEffect[branch].branches++;
+                        branchSuccess = 1;
+                    }
+                }
+            }
+        }
+        function reset() {
+            xVals = [];
+            yVals = [];
+            zVals = [];
+            idS = [];
+            newID = 0;
+            lines = [];
+            planes = [];
+            renderBehind = [];
+            colorFalloffMultiplier = [];
+            colorFalloffID = [];
+            renderPoints = [];
+            particleAlpha = [];
+        }
+        for (count1 = 0; 20 > count1; count1++) {
+            enemies.push({ x: count1 * 100 + 50, y: 20, z: 20, xVel: 0, yVel: 0, zVel: 0, hP: 45, maxHP: 45 });
+        }
+        function windowMultiplyX(value) {
+            return (c.width / 1920) * value;
+        }
+        function windowMultiplyY(value) {
+            return (c.height / 1080) * value;
+        }
+        //loop function
+        function loop() {
+            ctx.lineCap = "round";
+            reset();
+            rectPrism(-10, -5, -2, 7, 7, 7, true, true, loopCount / 200, loopCount / 100, true, 0.3);
+            planeArray(-48 + Math.floor(xPos / 12) * 12, 6, -48 + Math.floor(zPos / 12) * 12, 8, 8, 12, true, true, true, 1);
+            //enemy rendering
+            for (count1 = 0; enemies.length > count1; count1++) {
+                for (count2 = 0; bullets.length > count2; count2++) {
+                    if (Math.sqrt(Math.pow(enemies[count1].x - bullets[count2].x, 2) + Math.pow(enemies[count1].y - bullets[count2].y, 2) + Math.pow(enemies[count1].z - bullets[count2].z, 2)) < 10) {
+                        mouseHoldIdk = mouseHoldIdk + 50;
+                        zTemp2 = 3 * Math.cos(bullets[count2].dir1);
+                        xTemp2 = 3 * Math.sin(bullets[count2].dir1);
+                        yTemp2 = 3 * Math.sin(bullets[count2].dir2);
+                        zTemp2 = zTemp2 * Math.cos(bullets[count2].dir2);
+                        xTemp2 = xTemp2 * Math.cos(bullets[count2].dir2);
+                        enemies[count1].xVel = enemies[count1].xVel + xTemp2;
+                        enemies[count1].yVel = enemies[count1].yVel + yTemp2;
+                        enemies[count1].zVel = enemies[count1].zVel + zTemp2;
+                        enemies[count1].hP = enemies[count1].hP - 15;
+                        bullets.splice(count2, 1);
+                        for (count3 = 0; 30 > count3; count3++) {
+                            particles.push({ x: enemies[count1].x, y: enemies[count1].y, z: enemies[count1].z, xVel: 6 * Math.random() - 3, yVel: 6 * Math.random() - 3, zVel: 6 * Math.random() - 3, lifetime: 100 + Math.random() * 200, start: loopCount })
+                        }
+                    }
+                }
+                for (count2 = 0; enemies.length > count2; count2++) {
+                    if (Math.sqrt(Math.pow(enemies[count1].x - enemies[count2].x, 2) + Math.pow(enemies[count1].y - enemies[count2].y, 2) + Math.pow(enemies[count1].z - enemies[count2].z, 2)) < 13 && count1 != count2) {
+                        mouseHoldIdk = mouseHoldIdk + 15;
+                        if (enemies[count1].xVel / enemies[count2].xVel < 0) {
+                            enemies[count1].xVel = enemies[count1].xVel * 1.15;
+                        } else {
+                            enemies[count1].xVel = enemies[count1].xVel * -1.15;
+                        }
+                        if (enemies[count1].yVel / enemies[count2].yVel < 0) {
+                            enemies[count1].yVel = enemies[count1].yVel * 1.15;
+                        } else {
+                            enemies[count1].yVel = enemies[count1].yVel * -1.15;
+                        }
+                        if (enemies[count1].zVel / enemies[count2].zVel < 0) {
+                            enemies[count1].zVel = enemies[count1].zVel * 1.15;
+                        } else {
+                            enemies[count1].zVel = enemies[count1].zVel * -1.15;
+                        }
+                        //enemies[count1].yVel = enemies[count1].yVel * 1.1;
+                        //enemies[count1].zVel = enemies[count1].zVel * 1.1;
+                        for (count3 = 0; 5 > count3; count3++) {
+                            particles.push({ x: enemies[count1].x, y: enemies[count1].y, z: enemies[count1].z, xVel: 6 * Math.random() - 3, yVel: 6 * Math.random() - 3, zVel: 6 * Math.random() - 3, lifetime: 100 + Math.random() * 200, start: loopCount })
+                        }
+                    }
+                }
+                if (Math.sqrt(Math.pow(enemies[count1].x - xPos, 2) + Math.pow(enemies[count1].y - yPos, 2) + Math.pow(enemies[count1].z - zPos, 2)) < 10) {
+                    for (count3 = 0; Math.random() * 16 > count3; count3++) {
+                        crackedGlass();
+                    }
+                    hitPoints = hitPoints - 3;
+                    mouseHoldIdk = mouseHoldIdk + 150;
+                    xVel = xVel + enemies[count1].xVel / 2;
+                    yVel = yVel + enemies[count1].yVel / 2;
+                    zVel = zVel + enemies[count1].zVel / 2;
+                }
+                xTemp = xPos - enemies[count1].x;
+                yTemp = yPos - enemies[count1].y;
+                zTemp = zPos - enemies[count1].z;
+                enemies[count1].xVel = enemies[count1].xVel + (xTemp / Math.sqrt(xTemp * xTemp + yTemp * yTemp + zTemp * zTemp)) / 50;
+                enemies[count1].yVel = enemies[count1].yVel + (yTemp / Math.sqrt(xTemp * xTemp + yTemp * yTemp + zTemp * zTemp)) / 50;
+                enemies[count1].zVel = enemies[count1].zVel + (zTemp / Math.sqrt(xTemp * xTemp + yTemp * yTemp + zTemp * zTemp)) / 50;
+                enemies[count1].x = enemies[count1].x + enemies[count1].xVel;
+                enemies[count1].y = enemies[count1].y + enemies[count1].yVel;
+                enemies[count1].z = enemies[count1].z + enemies[count1].zVel;
+                enemies[count1].xVel = enemies[count1].xVel * 0.997;
+                enemies[count1].yVel = enemies[count1].yVel * 0.997;
+                enemies[count1].zVel = enemies[count1].zVel * 0.997;
+                rectPrism(enemies[count1].x - 5, enemies[count1].y - 5, enemies[count1].z - 1.25, 10, 10, 10, true, true, loopCount / 25 + enemies[count1].xVel, loopCount / 25 + enemies[count1].zVel, true, 0.1);
+                if (enemies[count1].y > 6) {
+                    mouseHoldIdk = mouseHoldIdk + 30;
+                    enemies[count1].y = 5.99;
+                    enemies[count1].yVel = enemies[count1].yVel * -1;
+                    for (count3 = 0; 15 > count3; count3++) {
+                        particles.push({ x: enemies[count1].x, y: enemies[count1].y, z: enemies[count1].z, xVel: 6 * Math.random() - 3, yVel: 6 * Math.random() - 3, zVel: 6 * Math.random() - 3, lifetime: 100 + Math.random() * 200, start: loopCount })
+                    }
+                }
+                if (enemies[count1].hP <= 0) {
+                    for (count2 = 0; 200 > count2; count2++) {
+                        particles.push({ x: enemies[count1].x, y: enemies[count1].y, z: enemies[count1].z, xVel: 6 * Math.random() - 3, yVel: 6 * Math.random() - 3, zVel: 6 * Math.random() - 3, lifetime: 150 + Math.random() * 300, start: loopCount })
+                    }
+                    mouseHoldIdk = mouseHoldIdk + 100;
+                    enemies.splice(count1, 1);
+                }
+            }
+            //bullet rendering
+            for (count1 = 0; bullets.length > count1; count1++) {
+                ////yaw direction
+                //xTemp = bullets[count1].x * Math.cos(yDir) - bullets[count1].z * Math.sin(yDir);
+                //zTemp = bullets[count1].z * Math.cos(yDir) + bullets[count1].x * Math.sin(yDir);
+                ////pitch direction
+                //yTemp = bullets[count1].y * Math.cos(xDir) - zTemp * Math.sin(xDir);
+                //zTemp = zTemp * Math.cos(xDir) + bullets[count1].y * Math.sin(xDir);
+                //yaw direction
+                yTemp2 = 0;
+                //xTemp2 = 0.2 * Math.cos(bullets[count1].dir1) - 0.2 * Math.sin(bullets[count1].dir1);
+                //zTemp2 = 0.2 * Math.cos(bullets[count1].dir1) + 0.2 * Math.sin(bullets[count1].dir1);
+                zTemp2 = 5 * Math.cos(bullets[count1].dir1);
+                xTemp2 = 5 * Math.sin(bullets[count1].dir1);
+                yTemp2 = 5 * Math.sin(bullets[count1].dir2);
+                zTemp2 = zTemp2 * Math.cos(bullets[count1].dir2);
+                xTemp2 = xTemp2 * Math.cos(bullets[count1].dir2);
+                if (bullets[count1].lifetime == 150) {
+                    zTemp2 = 13 * Math.cos(bullets[count1].dir1);
+                    xTemp2 = 13 * Math.sin(bullets[count1].dir1);
+                    yTemp2 = 13 * Math.sin(bullets[count1].dir2);
+                    zTemp2 = zTemp2 * Math.cos(bullets[count1].dir2);
+                    xTemp2 = xTemp2 * Math.cos(bullets[count1].dir2);
+                }
+                if (bullets[count1].lifetime % 2 == 0 && bullets[count1].lifetime < 130) {
+                    particles.push({ x: bullets[count1].x, y: bullets[count1].y, z: bullets[count1].z, xVel: Math.random() - 0.5, yVel: Math.random() - 0.5, zVel: Math.random() - 0.5, lifetime: 10 + Math.random() * 30, start: loopCount })
+                }
+                //pitch direction
+                //yTemp2 = 0.2 * Math.cos(bullets[count1].dir2) - zTemp2 * Math.sin(bullets[count1].dir2);
+                //zTemp2 = zTemp2 * Math.cos(bullets[count1].dir2) + 0.2 * Math.sin(bullets[count1].dir2);
+                bullets[count1].x = bullets[count1].x + xTemp2
+                bullets[count1].y = bullets[count1].y + yTemp2
+                bullets[count1].z = bullets[count1].z + zTemp2
+                rectPrism(bullets[count1].x - 1.25, bullets[count1].y - 1.25, bullets[count1].z - 1.25, 2.5, 2.5, 2.5, true, true, bullets[count1].lifetime / 5, bullets[count1].lifetime / 5, true, 0.1);
+                //var idRef = newID;
+                //drawPoint(bullets[count1].x, bullets[count1].y, bullets[count1].z);
+                //drawPoint(bullets[count1].x + xTemp2 * 7, bullets[count1].y + yTemp2 * 7, bullets[count1].z + zTemp2 * 7);
+                //lines.push([idRef, idRef + 1]);
+                //colorFalloffMultiplier.push(0.1);
+                //colorFalloffMultiplier.push(0.1);
+                if (bullets[count1].y > 6) {
+                    bullets[count1].y = 5.99;
+                    bullets[count1].dir2 = bullets[count1].dir2 * -1;
+                    for (count3 = 0; 30 > count3; count3++) {
+                        particles.push({ x: bullets[count1].x, y: bullets[count1].y, z: bullets[count1].z, xVel: 6 * Math.random() - 3, yVel: 6 * Math.random() - 3, zVel: 6 * Math.random() - 3, lifetime: 100 + Math.random() * 200, start: loopCount })
+                    }
+                }
+                bullets[count1].lifetime--;
+                if (bullets[count1].lifetime < 0) {
+                    bullets.splice(count1, 1);
+                }
+            }
+            //particle rendering
+            for (count1 = 0; particles.length > count1; count1++) {
+                if (particles[count1].start == loopCount) {
+                    particles[count1].start = particles[count1].lifetime
+                }
+                particles[count1].x = particles[count1].x + particles[count1].xVel * (1 + mouseHoldIdk / 30) + (Math.random() * mouseHoldIdk / 10 - mouseHoldIdk / 20);
+                particles[count1].y = particles[count1].y + particles[count1].yVel * (1 + mouseHoldIdk / 30) + (Math.random() * mouseHoldIdk / 10 - mouseHoldIdk / 20);
+                particles[count1].z = particles[count1].z + particles[count1].zVel * (1 + mouseHoldIdk / 30) + (Math.random() * mouseHoldIdk / 10 - mouseHoldIdk / 20);
+                particles[count1].xVel = particles[count1].xVel * 0.995;
+                particles[count1].yVel = particles[count1].yVel + 0.05;
+                particles[count1].zVel = particles[count1].zVel * 0.995;
+                if (particles[count1].y > 6) {
+                    particles[count1].y = 5.99;
+                    particles[count1].yVel = particles[count1].yVel * -1
+                }
+                particles[count1].lifetime--;
+                renderPoints.push(newID);
+                drawPoint(particles[count1].x, particles[count1].y, particles[count1].z, (1 / particles[count1].start) * particles[count1].lifetime);
+                if (particles[count1].lifetime < 0) {
+                    particles.splice(count1, 1);
+                }
+            }
+            //fovThing = 700 + Math.sin(loopCount / 100) * 200
+            dists = [];
+            //render the pixels
+            xRot = [];
+            yRot = [];
+            zRot = [];
+            if (renderStyle == 0) {
+                //ctx.globalCompositeOperation = "multiply";
+                //ctx.fillStyle = "hsla(0, 0%, 0%, " + (0.13) + ")";
+                ctx.fillStyle = "hsla(0, 0%, 0%, " + (Math.sin(loopCount / 2) * 0.04 + 0.08) + ")";
+                //ctx.fillStyle = "Black";
+                ctx.fillRect(0, 0, c.width, c.height);
+                //ctx.globalCompositeOperation = "normal";
+            } else if (renderStyle == 1) {
+                //ctx.fillStyle = "White"
+                ctx.fillStyle = "hsla(0, 0%, 100%, " + (0.13) + ")";
+                ctx.fillRect(0, 0, c.width, c.height);
+            } else if (renderStyle == 2) {
+                //ctx.fillStyle = "White"
+                ctx.fillStyle = "hsl(0, 0%, 0%)";
+                ctx.fillRect(0, 0, c.width, c.height);
+            }
+            for (count1 = 0; xVals.length > count1; count1++) {
+                ////sets temp variables to relative position
+                xTemp = (xVals[count1] - xPos);
+                yTemp = (yVals[count1] - yPos);
+                zTemp = (zVals[count1] - zPos);
+                //yaw direction
+                xTemp2 = xTemp * Math.cos(yDir) - zTemp * Math.sin(yDir);
+                zTemp2 = zTemp * Math.cos(yDir) + xTemp * Math.sin(yDir);
+                //pitch direction
+                yTemp2 = yTemp * Math.cos(xDir) - zTemp2 * Math.sin(xDir);
+                zTemp2 = zTemp2 * Math.cos(xDir) + yTemp * Math.sin(xDir);
+                xTemp = xTemp2;
+                yTemp = yTemp2;
+                zTemp = zTemp2;
+                xRot.push(xTemp);
+                yRot.push(yTemp);
+                zRot.push(zTemp);
+                if (renderPoints.indexOf(idS[count1]) != -1) {
+                    if (renderStyle == 0 || renderStyle == 2) {
+                        ctx.fillStyle = "hsla(" + (23 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.1) + "%, " + particleAlpha[count1] + ")";
+                        //if (zTemp > stopDrawingZ) {
+                        //    ctx.fillRect((fovThing / zTemp) * xTemp + (c.width / 2), (fovThing / zTemp) * yTemp + (c.height / 2), 25 / zTemp, 25 / zTemp);
+                        //} else {
+                        //    ctx.fillRect((fovThing * zTemp * -1 + fovThing) * xTemp + (c.width / 2), (fovThing * zTemp * -1 + fovThing) * yTemp + (c.height / 2), 25 / zTemp, 25 / zTemp);
+                        //}
+                        if (zTemp > 0) {
+                            ctx.beginPath();
+                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
+                    } else if (renderStyle == 1) {
+                        ctx.fillStyle = "hsla(" + (23 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) % 360) + ", 100%, 0%, " + particleAlpha[count1] + ")";
+                        if (zTemp > 0) {
+                            ctx.beginPath();
+                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(1125 / zTemp)) + 3, 0, 2 * Math.PI);
+                            ctx.fill();
+                        } ctx.fillStyle = "hsla(" + (23 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.1) + "%, " + particleAlpha[count1] + ")";
+                        if (zTemp > 0) {
+                            ctx.beginPath();
+                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+            //order everything by distance
+            for (count1 = 0; lines.length > count1; count1++) {
+                shouldIRenderBehind = 1;
+                xTemp = 0;
+                yTemp = 0;
+                zTemp = 0;
+                for (count2 = 0; (lines[count1].length) > count2; count2++) {
+                    xTemp = xTemp + xRot[idS.indexOf(lines[count1][count2])];
+                    yTemp = yTemp + yRot[idS.indexOf(lines[count1][count2])];
+                    zTemp = zTemp + zRot[idS.indexOf(lines[count1][count2])];
+                    if (renderBehind.indexOf(lines[count1][count2]) != -1) {
+                        shouldIRenderBehind = 0;
+                    }
+                }
+                xTemp = xTemp / lines[count1].length;
+                yTemp = yTemp / lines[count1].length;
+                zTemp = zTemp / lines[count1].length;
+                dists.push([Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp), lines[count1], 0, shouldIRenderBehind, colorFalloffMultiplier[idS.indexOf(lines[count1][0])]])
+            }
+            for (count1 = 0; planes.length > count1; count1++) {
+                shouldIRenderBehind = 1;
+                xTemp = 0;
+                yTemp = 0;
+                zTemp = 0;
+                for (count2 = 0; (planes[count1].length) > count2; count2++) {
+                    xTemp = xTemp + xRot[idS.indexOf(planes[count1][count2])];
+                    yTemp = yTemp + yRot[idS.indexOf(planes[count1][count2])];
+                    zTemp = zTemp + zRot[idS.indexOf(planes[count1][count2])];
+                    if (renderBehind.indexOf(planes[count1][count2]) != -1) {
+                        shouldIRenderBehind = 0;
+                    }
+                }
+                xTemp = xTemp / planes[count1].length;
+                yTemp = yTemp / planes[count1].length;
+                zTemp = zTemp / planes[count1].length;
+                dists.push([Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp), planes[count1], 1, shouldIRenderBehind, colorFalloffMultiplier[idS.indexOf(planes[count1][0])]])
+            }
+            //actually does the sorting
+            dists.sort(function (a, b) {
+                return parseFloat(b[0]) - parseFloat(a[0]);
+            });
+            //renders everything
+            for (count1 = 0; dists.length > count1; count1++) {
+                ctx.beginPath();
+                xTemp = xRot[idS.indexOf(dists[count1][1][0])];
+                yTemp = yRot[idS.indexOf(dists[count1][1][0])];
+                zTemp = zRot[idS.indexOf(dists[count1][1][0])];
+                if (zTemp > 0) {
+                    ctx.moveTo(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)));
+                } else if (dists[count1][3] == 1 && zTemp > stopDrawingZ) {
+                    ctx.moveTo(Math.round((fovThing * zTemp * -1 + fovThing) * xTemp + (c.width / 2)), Math.round((fovThing * zTemp * -1 + fovThing) * yTemp + (c.height / 2)));
+                }
+                for (count2 = 1; (dists[count1][1].length) > count2; count2++) {
+                    xTemp = xRot[idS.indexOf(dists[count1][1][count2])];
+                    yTemp = yRot[idS.indexOf(dists[count1][1][count2])];
+                    zTemp = zRot[idS.indexOf(dists[count1][1][count2])];
+                    if (zTemp > 0) {
+                        ctx.lineTo(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)));
+                    } else if (dists[count1][3] == 1 && zTemp > stopDrawingZ) {
+                        ctx.lineTo(Math.round((fovThing * zTemp * -1 + fovThing) * xTemp + (c.width / 2)), Math.round((fovThing * zTemp * -1 + fovThing) * yTemp + (c.height / 2)));
+                    }
+                }
+                xTemp = 0;
+                yTemp = 0;
+                zTemp = 0;
+                for (count2 = 0; dists[count1][1].length > count2; count2++) {
+                    xTemp = xTemp + xRot[idS.indexOf(dists[count1][1][count2])];
+                    yTemp = yTemp + yRot[idS.indexOf(dists[count1][1][count2])];
+                    zTemp = zTemp + zRot[idS.indexOf(dists[count1][1][count2])];
+                }
+                xTemp = xTemp / dists[count1][1].length;
+                yTemp = yTemp / dists[count1][1].length;
+                zTemp = zTemp / dists[count1][1].length;
+                if (renderStyle == 0 || renderStyle == 2) {
+                    if (dists[count1][2] == 0 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < 50 / dists[count1][4]) {
+                        ctx.lineWidth = Math.round(300 / dists[count1][0]);
+                        ctx.strokeStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%, " + (1 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.03 * dists[count1][4]) + ")";
+                        //ctx.strokeStyle = "hsl(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%)";
+                        ctx.stroke();
+                    }
+                    if (dists[count1][2] == 1 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < (100 / 3) / dists[count1][4]) {
+                        ctx.fillStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%, " + (0.05 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.0015 * dists[count1][4]) + ")";
+                        ctx.fill();
+                    }
+                } else if (renderStyle == 1) {
+                    if (dists[count1][2] == 1 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < (100 / 3) / dists[count1][4]) {
+                        ctx.fillStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%, " + (0.2 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.006 * dists[count1][4]) + ")";
+                        ctx.fill();
+                    }
+                    if (dists[count1][2] == 0 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < 50 / dists[count1][4]) {
+                        ctx.lineWidth = Math.round(450 / dists[count1][0]) + 7;
+                        ctx.strokeStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, 0%, " + (1 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.03 * dists[count1][4]) + ")";
+                        ctx.stroke();
+                    }
+                }
+            }
+            for (count1 = 0; dists.length > count1 && renderStyle == 1; count1++) {
+                ctx.beginPath();
+                xTemp = xRot[idS.indexOf(dists[count1][1][0])];
+                yTemp = yRot[idS.indexOf(dists[count1][1][0])];
+                zTemp = zRot[idS.indexOf(dists[count1][1][0])];
+                if (zTemp > 0) {
+                    ctx.moveTo(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)));
+                } else if (dists[count1][3] == 1 && zTemp > stopDrawingZ) {
+                    ctx.moveTo(Math.round((fovThing * zTemp * -1 + fovThing) * xTemp + (c.width / 2)), Math.round((fovThing * zTemp * -1 + fovThing) * yTemp + (c.height / 2)));
+                }
+                for (count2 = 1; (dists[count1][1].length) > count2; count2++) {
+                    xTemp = xRot[idS.indexOf(dists[count1][1][count2])];
+                    yTemp = yRot[idS.indexOf(dists[count1][1][count2])];
+                    zTemp = zRot[idS.indexOf(dists[count1][1][count2])];
+                    if (zTemp > 0) {
+                        ctx.lineTo(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)));
+                    } else if (dists[count1][3] == 1 && zTemp > stopDrawingZ) {
+                        ctx.lineTo(Math.round((fovThing * zTemp * -1 + fovThing) * xTemp + (c.width / 2)), Math.round((fovThing * zTemp * -1 + fovThing) * yTemp + (c.height / 2)));
+                    }
+                }
+                xTemp = 0;
+                yTemp = 0;
+                zTemp = 0;
+                for (count2 = 0; dists[count1][1].length > count2; count2++) {
+                    xTemp = xTemp + xRot[idS.indexOf(dists[count1][1][count2])];
+                    yTemp = yTemp + yRot[idS.indexOf(dists[count1][1][count2])];
+                    zTemp = zTemp + zRot[idS.indexOf(dists[count1][1][count2])];
+                }
+                xTemp = xTemp / dists[count1][1].length;
+                yTemp = yTemp / dists[count1][1].length;
+                zTemp = zTemp / dists[count1][1].length;
+                if (dists[count1][2] == 0 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < 50 / dists[count1][4]) {
+                    ctx.lineWidth = Math.round(300 / dists[count1][0]);
+                    ctx.strokeStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%, " + (1 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.03 * dists[count1][4]) + ")";
+                    ctx.stroke();
+                }
+            }
+            //idk
+            mouseHoldIdk = mouseHoldIdk * 0.8
+            fovThing = (fovThing - 500) * 0.8 + 500;
+            if (mouseIsDown == 1 && fireCount < 0) {
+                fireCount = 25;
+                bullets.push({ x: xPos, y: yPos, z: zPos, dir1: yDir, dir2: xDir, lifetime: 150 })
+            }
+            if (fireCount > 17) {
+                mouseHoldIdk = mouseHoldIdk + 7;
+                fovThing = fovThing - 10;
+            }
+            ctx2.clearRect(0, 0, c.width, c.height);
+            ctx2.lineCap = "round"
+            for (count2 = 0; 3 > count2 && renderStyle == 1; count2++) {
+                ctx2.lineWidth = 15 + Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * 6;
+                ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 0%, 0%, " + 1 + ")";
+                for (count1 = 0; 4 > count1; count1++) {
+                    ctx2.beginPath();
+                    ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX(75 + (3) * Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * count2 + (20 + mouseHoldIdk) * (count2 + 1)), (Math.PI / 10) + count1 * 5 * (Math.PI / 10) + loopCount / (15 * (count2 + 1)), (count1 + 1) * 5 * (Math.PI / 10) - (Math.PI / 10) + loopCount / (15 * (count2 + 1)));
+                    ctx2.stroke();
+                }
+            }
+            for (count2 = 0; 3 > count2; count2++) {
+                ctx2.lineWidth = 6 + Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * 6;
+                ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
+                for (count1 = 0; 4 > count1; count1++) {
+                    ctx2.beginPath();
+                    ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX(75 + (3) * Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * count2 + (20 + mouseHoldIdk) * (count2 + 1)), (Math.PI / 10) + count1 * 5 * (Math.PI / 10) + loopCount / (15 * (count2 + 1)), (count1 + 1) * 5 * (Math.PI / 10) - (Math.PI / 10) + loopCount / (15 * (count2 + 1)));
+                    ctx2.stroke();
+                }
+            }
+            //ctx2.fillStyle = "hsla(" + loopCount % 360 + ", 100%, 90%, " + 1 + ")";
+            //ctx2.fillRect(15, 1065, 30, -1 * (1050 / 100) * jetpackFuel);
+            if (renderStyle == 1) {
+                ctx2.beginPath();
+                ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 0%, 0%, " + 1 + ")";
+                ctx2.lineWidth = 19;
+                ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 50, Math.PI / -2, jetpackFuel * ((2 * Math.PI) / 100) - Math.PI / 2);
+                ctx2.stroke();
+            }
+            ctx2.beginPath();
+            ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
+            ctx2.lineWidth = 10;
+            ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 50, Math.PI / -2, jetpackFuel * ((2 * Math.PI) / 100) - Math.PI / 2);
+            ctx2.stroke();
+            if (renderStyle == 1) {
+                ctx2.beginPath();
+                ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 0%, 0%, " + 1 + ")";
+                ctx2.lineWidth = 19;
+                ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 70, Math.PI / -2, hitPoints * ((2 * Math.PI) / 100) - Math.PI / 2);
+                ctx2.stroke();
+            }
+            ctx2.beginPath();
+            ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
+            ctx2.lineWidth = 10;
+            ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 70, Math.PI / -2, hitPoints * ((2 * Math.PI) / 100) - Math.PI / 2);
+            ctx2.stroke();
+            //var gradient1 = ctx.createRadialGradient(c.width / 2, c.height / 2, 0, c.width, c.height, Math.sqrt(Math.pow(c.width / 2, 2) + Math.pow(c.width / 2, 2)))
+            if (Math.sqrt(Math.pow(c.width / 2, 2) + Math.pow(c.width / 2, 2)) - mouseHoldIdk * 10 > 0) {
+                var gradient1 = ctx2.createRadialGradient(c.width / 2, c.height / 2, 0, c.width / 2, c.height / 2, Math.sqrt(Math.pow(c.width / 2, 2) + Math.pow(c.width / 2, 2)) - (100 - (1000 / (mouseHoldIdk + 1))));
+            } else {
+                var gradient1 = ctx2.createRadialGradient(c.width / 2, c.height / 2, 0, c.width / 2, c.height / 2, 0);
+            }
+            gradient1.addColorStop(0, "hsla(0, 0%, 0%, 0)");
+            //gradient1.addColorStop(1, "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 15) * 40 + 50) + "%, " + 1 + ")");
+            count3 = Math.random();
+            if (count3 < hitPoints / 100) {
+                gradient1.addColorStop(1, "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 15) * 40 + 50) + "%, " + 1 + ")");
+            } else {
+                gradient1.addColorStop(1, "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 15) * 40 + 50) / 1.4 + "%, " + 1 + ")");
+            }
+            ctx2.fillStyle = gradient1;
+            ctx2.fillRect(0, 0, c.width, c.height);
+            ctx2.lineWidth = 2 + Math.random() * (100 - hitPoints) / 20;
+            if (count3 < hitPoints / 100) {
+                ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 0.6 + ")";
+            } else {
+                ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) / 4 + "%, " + 0.6 + ")";
+            }
+            for (count1 = 0; crackedGlassEffect.length > count1; count1++) {
+                ctx2.beginPath();
+                if (crackedGlassEffect[count1].link != -1) {
+                    ctx2.moveTo(windowMultiplyX(crackedGlassEffect[count1].x), windowMultiplyY(crackedGlassEffect[count1].y));
+                    ctx2.lineTo(windowMultiplyX(crackedGlassEffect[crackedGlassEffect[count1].link].x), windowMultiplyY(crackedGlassEffect[crackedGlassEffect[count1].link].y));
+                    ctx2.stroke();
+                }
+            }
+            for (count1 = 0; enemies.length > count1; count1++) {
+                xTemp = (enemies[count1].x - xPos);
+                yTemp = (enemies[count1].y - yPos);
+                zTemp = (enemies[count1].z - zPos);
+                //yaw direction
+                xTemp2 = xTemp * Math.cos(yDir) - zTemp * Math.sin(yDir);
+                zTemp2 = zTemp * Math.cos(yDir) + xTemp * Math.sin(yDir);
+                //pitch direction
+                yTemp2 = yTemp * Math.cos(xDir) - zTemp2 * Math.sin(xDir);
+                zTemp2 = zTemp2 * Math.cos(xDir) + yTemp * Math.sin(xDir);
+                xTemp = xTemp2;
+                yTemp = yTemp2;
+                zTemp = zTemp2;
+                ctx2.beginPath();
+                if (count3 < hitPoints / 100) {
+                    ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
+                } else {
+                    ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) / 2 + "%, " + 1 + ")";
+                }
+                //ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
+                for (count2 = 0; 4 > count2 && zTemp > 25; count2++) {
+                    ctx2.beginPath();
+                    ctx2.lineWidth = 5 + 100 / zTemp;
+                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, (4000 / zTemp) + (10 + mouseHoldIdk / 2), (Math.PI / 10) + count2 * 5 * (Math.PI / 10) + loopCount / 15, (count2 + 1) * 5 * (Math.PI / 10) - (Math.PI / 10) + loopCount / 15);
+                    ctx2.stroke();
+                }
+                if (zTemp > 200) {
+                    if (count3 < hitPoints / 100) {
+                        ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + Math.pow(1 / (zTemp - 200), 1 / 4) + ")";
+                    } else {
+                        ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) / 2 + "%, " + Math.pow(1 / (zTemp - 200), 1 / 4) + ")";
+                    }
+                }
+                if (zTemp > 0 && (4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20 > 0) {
+                    ctx2.beginPath();
+                    ctx2.lineWidth = 10 + 75 / zTemp;
+                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, (4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20, Math.PI / -2, enemies[count1].hP * (2 * Math.PI) / enemies[count1].maxHP - Math.PI / 2);
+                    ctx2.stroke();
+                }
+            }
+            //forward
+            if (keys[87] == true) {
+                zVel = zVel + 0.012 * Math.cos(yDir)
+                xVel = xVel + 0.012 * Math.sin(yDir)
+            }
+            //backward
+            if (keys[83] == true) {
+                zVel = zVel - 0.012 * Math.cos(yDir)
+                xVel = xVel - 0.012 * Math.sin(yDir)
+            }
+            //right 
+            if (keys[68] == true) {
+                zVel = zVel + 0.012 * Math.cos(yDir + Math.PI / 2)
+                xVel = xVel + 0.012 * Math.sin(yDir + Math.PI / 2)
+            }
+            //left
+            if (keys[65] == true) {
+                zVel = zVel - 0.012 * Math.cos(yDir + Math.PI / 2)
+                xVel = xVel - 0.012 * Math.sin(yDir + Math.PI / 2)
+            }
+            //jump
+            jetpackFuelVel = jetpackFuelVel * 0.97;
+            if (keys[32] == true && jetpackFuel > 1) {
+                yVel = yVel - 0.03;
+                jetpackFuelVel = jetpackFuelVel - 0.02;
+            }
+            if (keys[32] == false && jetpackFuel < 100) {
+                jetpackFuelVel = jetpackFuelVel + 0.01;
+            } else if (jetpackFuelVel > 0) {
+                jetpackFuelVel = 0;
+            }
+            if (jetpackFuelVel < 0 && jetpackFuel < 0.5) {
+                jetpackFuelVel = 0;
+            }
+            jetpackFuel = jetpackFuel + jetpackFuelVel;
+            //down
+            if (keys[16] == true) {
+                yVel = yVel + 0.03;
+            }
+            if (keys[74] == true) {
+                yDir = yDir - 0.03
+            }
+            //counter-clockwise y axis (yaw)
+            if (keys[76] == true) {
+                yDir = yDir + 0.03
+            }
+            //clockwise x axis (pitch)
+            if (keys[73] == true) {
+                xDir = xDir - 0.03
+            }
+            //counter clockwise x axis (pitch)
+            if (keys[75] == true) {
+                xDir = xDir + 0.03
+            }
+            xPos = xPos + xVel;
+            yPos = yPos + yVel;
+            zPos = zPos + zVel;
+            if (yPos < 0) {
+                yVel = yVel + 0.012;
+            } else {
+                yVel = 0;
+                yPos = -0.015;
+            }
+            xVel = xVel * 0.98;
+            yVel = yVel * 0.99;
+            zVel = zVel * 0.98;
+            fireCount--;
+            loopCount++;
+            //secondsCount++;
+            //whatTime = new Date();
+            //thisSecond = whatTime.getMilliseconds();
+            //if (Math.floor(thisSecond / 200) != Math.floor(pastSecond / 200)) {
+            //    pastSecond = whatTime.getMilliseconds();
+            //    FPS = secondsCount;
+            //    secondsCount = 0;
+            //}
+            //speedRegulator = (1000 / 60) - (200 / FPS)
+            //if (speedRegulator < 0) {
+            //    speedRegulator = 0;
+            //}
+            ////ctx.fillStyle = "White";
+            ////ctx.font = "48px Arial"
+            ////ctx.fillText(speedRegulator, 15, 50);
+            //setTimeout(loop, speedRegulator);
+            //ctx3.drawImage(c, 0, 0);
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>
