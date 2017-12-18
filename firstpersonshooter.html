@@ -6,9 +6,9 @@
 </head>
 <body>
     <!--<canvas id="myCanvas" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; cursor: none" ></canvas>-->
-    <canvas id="myCanvas" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:0 "></canvas>
+    <canvas id="myCanvas" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:0; image-rendering: pixelated;"></canvas>
     <!--<canvas id="myCanvas3" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:1 "></canvas>-->
-    <canvas id="myCanvas2" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:2 "></canvas>
+    <canvas id="myCanvas2" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:2; image-rendering: pixelated; "></canvas>
     <script>
         //credit to https://mdn.github.io/dom-examples/pointer-lock/ for pointer lock
         //setting up canvas
@@ -42,17 +42,23 @@
         document.exitPointerLock();
         //setting up keyboard
         var keys = [];
+        //counters
         var count1;
         var count2;
         var count3;
         var fireCount = 0;
         var loopCount = 0;
+        //time and frames per second
         var secondsCount = 0;
         var pastSecond;
         var whatTime = new Date();
         var thisSecond;
         var FPS;
+        var FPS2 = 60;
+        var fpsCache = 0;
+        var frameSkip = 1;
         var speedRegulator;
+        //more keyboard
         for (count1 = 0; 256 > count1; count1++) {
             keys.push(false);
         }
@@ -176,7 +182,7 @@
         var jetpackFuel = 100;
         var jetpackFuelVel = 0;
         //render style
-        var renderStyle = 1;
+        var renderStyle = 0;
         //hitpoints
         var hitPoints = 100;
         var crackedGlassEffect = [];
@@ -295,13 +301,13 @@
             if (crackedGlassEffect.length < Math.random() * 8 || Math.random() < 0.08) {
                 var side = Math.floor(Math.random() * 4)
                 if (side == 0) {
-                    crackedGlassEffect.push({ dir: Math.PI / 2, link: -1, x: Math.random() * c.width, y: 0, branches: 0 });
+                    crackedGlassEffect.push({ dir: Math.PI / 2, link: -1, x: Math.random() * 1920, y: 0, branches: 0 });
                 } else if (side == 1) {
-                    crackedGlassEffect.push({ dir: Math.PI, link: -1, x: c.width, y: Math.random() * c.height, branches: 0 });
+                    crackedGlassEffect.push({ dir: Math.PI, link: -1, x: 1920, y: Math.random() * 1080, branches: 0 });
                 } else if (side == 2) {
-                    crackedGlassEffect.push({ dir: 3 * Math.PI / 2, link: -1, x: Math.random() * c.width, y: c.height, branches: 0 });
+                    crackedGlassEffect.push({ dir: 3 * Math.PI / 2, link: -1, x: Math.random() * 1920, y: 1080, branches: 0 });
                 } else if (side == 3) {
-                    crackedGlassEffect.push({ dir: 0, link: -1, x: 0, y: Math.random() * c.height, branches: 0 });
+                    crackedGlassEffect.push({ dir: 0, link: -1, x: 0, y: Math.random() * 1080, branches: 0 });
                 }
             } else {
                 var branchSuccess = 0;
@@ -335,14 +341,29 @@
             renderPoints = [];
             particleAlpha = [];
         }
-        for (count1 = 0; 20 > count1; count1++) {
-            enemies.push({ x: count1 * 100 + 50, y: 20, z: 20, xVel: 0, yVel: 0, zVel: 0, hP: 45, maxHP: 45 });
+        for (count1 = 0; 3 > count1; count1++) {
+            enemies.push({ x: count1 * 100 + 50, y: 20, z: 20, xVel: 0, yVel: 0, zVel: 0, hP: 250, maxHP: 250 });
         }
         function windowMultiplyX(value) {
-            return (c.width / 1920) * value;
+            if (value > 2) {
+                return Math.round((c.width / 1920) * value);
+            } else {
+                return (c.width / 1920) * value;
+            }
         }
         function windowMultiplyY(value) {
-            return (c.height / 1080) * value;
+            if (value > 2) {
+                return Math.round((c.height / 1080) * value);
+            } else {
+                return (c.height / 1080) * value;
+            }
+        }
+        function isSkipped() {
+            if (loopCount % frameSkip == 0) {
+                return true;
+            } else {
+                return false;
+            }
         }
         //loop function
         function loop() {
@@ -514,23 +535,25 @@
             xRot = [];
             yRot = [];
             zRot = [];
-            if (renderStyle == 0) {
-                //ctx.globalCompositeOperation = "multiply";
-                //ctx.fillStyle = "hsla(0, 0%, 0%, " + (0.13) + ")";
-                ctx.fillStyle = "hsla(0, 0%, 0%, " + (Math.sin(loopCount / 2) * 0.04 + 0.08) + ")";
-                //ctx.fillStyle = "Black";
-                ctx.fillRect(0, 0, c.width, c.height);
-                //ctx.globalCompositeOperation = "normal";
-            } else if (renderStyle == 1) {
-                //ctx.fillStyle = "White"
-                ctx.fillStyle = "hsla(0, 0%, 100%, " + (0.13) + ")";
-                ctx.fillRect(0, 0, c.width, c.height);
-            } else if (renderStyle == 2) {
-                //ctx.fillStyle = "White"
-                ctx.fillStyle = "hsl(0, 0%, 0%)";
-                ctx.fillRect(0, 0, c.width, c.height);
+            if (isSkipped()) {
+                if (renderStyle == 0) {
+                    //ctx.globalCompositeOperation = "multiply";
+                    //ctx.fillStyle = "hsla(0, 0%, 0%, " + (0.13) + ")";
+                    ctx.fillStyle = "hsla(0, 0%, 0%, " + (Math.sin(loopCount / 2) * 0.04 + 0.08) + ")";
+                    //ctx.fillStyle = "Black";
+                    ctx.fillRect(0, 0, c.width, c.height);
+                    //ctx.globalCompositeOperation = "normal";
+                } else if (renderStyle == 1) {
+                    //ctx.fillStyle = "White"
+                    ctx.fillStyle = "hsla(0, 0%, 100%, " + (0.13) + ")";
+                    ctx.fillRect(0, 0, c.width, c.height);
+                } else if (renderStyle == 2) {
+                    //ctx.fillStyle = "White"
+                    ctx.fillStyle = "hsl(0, 0%, 0%)";
+                    ctx.fillRect(0, 0, c.width, c.height);
+                }
             }
-            for (count1 = 0; xVals.length > count1; count1++) {
+            for (count1 = 0; xVals.length > count1 && isSkipped(); count1++) {
                 ////sets temp variables to relative position
                 xTemp = (xVals[count1] - xPos);
                 yTemp = (yVals[count1] - yPos);
@@ -557,26 +580,26 @@
                         //}
                         if (zTemp > 0) {
                             ctx.beginPath();
-                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
+                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), windowMultiplyX(Math.round(Math.abs(750 / zTemp))), 0, 2 * Math.PI);
                             ctx.fill();
                         }
                     } else if (renderStyle == 1) {
                         ctx.fillStyle = "hsla(" + (23 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) % 360) + ", 100%, 0%, " + particleAlpha[count1] + ")";
                         if (zTemp > 0) {
                             ctx.beginPath();
-                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(1125 / zTemp)) + 3, 0, 2 * Math.PI);
+                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), windowMultiplyX(Math.round(Math.abs(1125 / zTemp)) + 3), 0, 2 * Math.PI);
                             ctx.fill();
                         } ctx.fillStyle = "hsla(" + (23 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.1) + "%, " + particleAlpha[count1] + ")";
                         if (zTemp > 0) {
                             ctx.beginPath();
-                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
+                            ctx.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), windowMultiplyX(Math.round(Math.abs(750 / zTemp))), 0, 2 * Math.PI);
                             ctx.fill();
                         }
                     }
                 }
             }
             //order everything by distance
-            for (count1 = 0; lines.length > count1; count1++) {
+            for (count1 = 0; lines.length > count1 && isSkipped(); count1++) {
                 shouldIRenderBehind = 1;
                 xTemp = 0;
                 yTemp = 0;
@@ -617,7 +640,7 @@
                 return parseFloat(b[0]) - parseFloat(a[0]);
             });
             //renders everything
-            for (count1 = 0; dists.length > count1; count1++) {
+            for (count1 = 0; dists.length > count1 && isSkipped(); count1++) {
                 ctx.beginPath();
                 xTemp = xRot[idS.indexOf(dists[count1][1][0])];
                 yTemp = yRot[idS.indexOf(dists[count1][1][0])];
@@ -650,7 +673,7 @@
                 zTemp = zTemp / dists[count1][1].length;
                 if (renderStyle == 0 || renderStyle == 2) {
                     if (dists[count1][2] == 0 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < 50 / dists[count1][4]) {
-                        ctx.lineWidth = Math.round(300 / dists[count1][0]);
+                        ctx.lineWidth = windowMultiplyX(Math.round(300 / dists[count1][0]));
                         ctx.strokeStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%, " + (1 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.03 * dists[count1][4]) + ")";
                         //ctx.strokeStyle = "hsl(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%)";
                         ctx.stroke();
@@ -665,13 +688,13 @@
                         ctx.fill();
                     }
                     if (dists[count1][2] == 0 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < 50 / dists[count1][4]) {
-                        ctx.lineWidth = Math.round(450 / dists[count1][0]) + 7;
+                        ctx.lineWidth = windowMultiplyX(Math.round(450 / dists[count1][0]) + 7);
                         ctx.strokeStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, 0%, " + (1 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.03 * dists[count1][4]) + ")";
                         ctx.stroke();
                     }
                 }
             }
-            for (count1 = 0; dists.length > count1 && renderStyle == 1; count1++) {
+            for (count1 = 0; dists.length > count1 && renderStyle == 1 && isSkipped(); count1++) {
                 ctx.beginPath();
                 xTemp = xRot[idS.indexOf(dists[count1][1][0])];
                 yTemp = yRot[idS.indexOf(dists[count1][1][0])];
@@ -703,26 +726,26 @@
                 yTemp = yTemp / dists[count1][1].length;
                 zTemp = zTemp / dists[count1][1].length;
                 if (dists[count1][2] == 0 && Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) < 50 / dists[count1][4]) {
-                    ctx.lineWidth = Math.round(300 / dists[count1][0]);
+                    ctx.lineWidth = windowMultiplyX(Math.round(300 / dists[count1][0]));
                     ctx.strokeStyle = "hsla(" + ((1.5 * loopCount + 5 * Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp)) % 360) + ", 100%, " + (100 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 2 * dists[count1][4]) + "%, " + (1 - Math.sqrt(zTemp * zTemp + yTemp * yTemp + xTemp * xTemp) * 0.03 * dists[count1][4]) + ")";
                     ctx.stroke();
                 }
             }
             //idk
             mouseHoldIdk = mouseHoldIdk * 0.8
-            fovThing = (fovThing - 500) * 0.8 + 500;
+            fovThing = (fovThing - windowMultiplyX(500)) * 0.8 + windowMultiplyX(500);
             if (mouseIsDown == 1 && fireCount < 0) {
                 fireCount = 25;
                 bullets.push({ x: xPos, y: yPos, z: zPos, dir1: yDir, dir2: xDir, lifetime: 150 })
             }
             if (fireCount > 17) {
-                mouseHoldIdk = mouseHoldIdk + 7;
-                fovThing = fovThing - 10;
+                mouseHoldIdk = mouseHoldIdk + windowMultiplyX(7);
+                fovThing = fovThing - windowMultiplyX(10);
             }
             ctx2.clearRect(0, 0, c.width, c.height);
             ctx2.lineCap = "round"
             for (count2 = 0; 3 > count2 && renderStyle == 1; count2++) {
-                ctx2.lineWidth = 15 + Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * 6;
+                ctx2.lineWidth = windowMultiplyX(15 + Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * 6);
                 ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 0%, 0%, " + 1 + ")";
                 for (count1 = 0; 4 > count1; count1++) {
                     ctx2.beginPath();
@@ -731,7 +754,7 @@
                 }
             }
             for (count2 = 0; 3 > count2; count2++) {
-                ctx2.lineWidth = 6 + Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * 6;
+                ctx2.lineWidth = windowMultiplyX(6 + Math.sin(loopCount / 5 + count2 * (Math.PI * 2) / 3) * 6);
                 ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
                 for (count1 = 0; 4 > count1; count1++) {
                     ctx2.beginPath();
@@ -744,26 +767,26 @@
             if (renderStyle == 1) {
                 ctx2.beginPath();
                 ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 0%, 0%, " + 1 + ")";
-                ctx2.lineWidth = 19;
-                ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 50, Math.PI / -2, jetpackFuel * ((2 * Math.PI) / 100) - Math.PI / 2);
+                ctx2.lineWidth = windowMultiplyX(19);
+                ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX(50), Math.PI / -2, jetpackFuel * ((2 * Math.PI) / 100) - Math.PI / 2);
                 ctx2.stroke();
             }
             ctx2.beginPath();
             ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
-            ctx2.lineWidth = 10;
-            ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 50, Math.PI / -2, jetpackFuel * ((2 * Math.PI) / 100) - Math.PI / 2);
+            ctx2.lineWidth = windowMultiplyX(10);
+            ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX(50), Math.PI / -2, jetpackFuel * ((2 * Math.PI) / 100) - Math.PI / 2);
             ctx2.stroke();
             if (renderStyle == 1) {
                 ctx2.beginPath();
                 ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 0%, 0%, " + 1 + ")";
-                ctx2.lineWidth = 19;
-                ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 70, Math.PI / -2, hitPoints * ((2 * Math.PI) / 100) - Math.PI / 2);
+                ctx2.lineWidth = windowMultiplyX(19);
+                ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX(70), Math.PI / -2, hitPoints * ((2 * Math.PI) / 100) - Math.PI / 2);
                 ctx2.stroke();
             }
             ctx2.beginPath();
             ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 1 + ")";
-            ctx2.lineWidth = 10;
-            ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, 70, Math.PI / -2, hitPoints * ((2 * Math.PI) / 100) - Math.PI / 2);
+            ctx2.lineWidth = windowMultiplyX(10);
+            ctx2.arc(c.width / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, c.height / 2 + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX(70), Math.PI / -2, hitPoints * ((2 * Math.PI) / 100) - Math.PI / 2);
             ctx2.stroke();
             //var gradient1 = ctx.createRadialGradient(c.width / 2, c.height / 2, 0, c.width, c.height, Math.sqrt(Math.pow(c.width / 2, 2) + Math.pow(c.width / 2, 2)))
             if (Math.sqrt(Math.pow(c.width / 2, 2) + Math.pow(c.width / 2, 2)) - mouseHoldIdk * 10 > 0) {
@@ -781,7 +804,7 @@
             }
             ctx2.fillStyle = gradient1;
             ctx2.fillRect(0, 0, c.width, c.height);
-            ctx2.lineWidth = 2 + Math.random() * (100 - hitPoints) / 20;
+            ctx2.lineWidth = windowMultiplyX(2 + Math.random() * (100 - hitPoints) / 20);
             if (count3 < hitPoints / 100) {
                 ctx2.strokeStyle = "hsla(" + loopCount % 360 + ", 100%, " + (Math.sin(loopCount / 5) * 40 + 50) + "%, " + 0.6 + ")";
             } else {
@@ -792,6 +815,46 @@
                 if (crackedGlassEffect[count1].link != -1) {
                     ctx2.moveTo(windowMultiplyX(crackedGlassEffect[count1].x), windowMultiplyY(crackedGlassEffect[count1].y));
                     ctx2.lineTo(windowMultiplyX(crackedGlassEffect[crackedGlassEffect[count1].link].x), windowMultiplyY(crackedGlassEffect[crackedGlassEffect[count1].link].y));
+                    ctx2.stroke();
+                }
+            }
+            for (count1 = 0; enemies.length > count1 && renderStyle == 1; count1++) {
+                xTemp = (enemies[count1].x - xPos);
+                yTemp = (enemies[count1].y - yPos);
+                zTemp = (enemies[count1].z - zPos);
+                //yaw direction
+                xTemp2 = xTemp * Math.cos(yDir) - zTemp * Math.sin(yDir);
+                zTemp2 = zTemp * Math.cos(yDir) + xTemp * Math.sin(yDir);
+                //pitch direction
+                yTemp2 = yTemp * Math.cos(xDir) - zTemp2 * Math.sin(xDir);
+                zTemp2 = zTemp2 * Math.cos(xDir) + yTemp * Math.sin(xDir);
+                xTemp = xTemp2;
+                yTemp = yTemp2;
+                zTemp = zTemp2;
+                ctx2.beginPath();
+                if (count3 < hitPoints / 100) {
+                    ctx2.strokeStyle = "Black";
+                } else {
+                    ctx2.strokeStyle = "Black";
+                }
+                //ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
+                for (count2 = 0; 4 > count2 && zTemp > 25; count2++) {
+                    ctx2.beginPath();
+                    ctx2.lineWidth = windowMultiplyX(5 + 150 / zTemp);
+                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX((4000 / zTemp) + (10 + mouseHoldIdk / 2)), (Math.PI / 10) + count2 * 5 * (Math.PI / 10) + loopCount / 15, (count2 + 1) * 5 * (Math.PI / 10) - (Math.PI / 10) + loopCount / 15);
+                    ctx2.stroke();
+                }
+                if (zTemp > 200) {
+                    if (count3 < hitPoints / 100) {
+                        ctx2.strokeStyle = "hsla(0, 0%, 0%, " + Math.pow(1 / (zTemp - 200), 1 / 4) + ")";
+                    } else {
+                        ctx2.strokeStyle = "hsla(0, 0%, 0%, " + Math.pow(1 / (zTemp - 200), 1 / 4) + ")";
+                    }
+                }
+                if (zTemp > 0 && (4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20 > 0) {
+                    ctx2.beginPath();
+                    ctx2.lineWidth = windowMultiplyX(5 + 112.5 / zTemp);
+                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX((4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20), Math.PI / -2, enemies[count1].hP * (2 * Math.PI) / enemies[count1].maxHP - Math.PI / 2);
                     ctx2.stroke();
                 }
             }
@@ -817,8 +880,8 @@
                 //ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)), Math.round((fovThing / zTemp) * yTemp + (c.height / 2)), Math.round(Math.abs(750 / zTemp)), 0, 2 * Math.PI);
                 for (count2 = 0; 4 > count2 && zTemp > 25; count2++) {
                     ctx2.beginPath();
-                    ctx2.lineWidth = 5 + 100 / zTemp;
-                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, (4000 / zTemp) + (10 + mouseHoldIdk / 2), (Math.PI / 10) + count2 * 5 * (Math.PI / 10) + loopCount / 15, (count2 + 1) * 5 * (Math.PI / 10) - (Math.PI / 10) + loopCount / 15);
+                    ctx2.lineWidth = windowMultiplyX(3 + 100 / zTemp);
+                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX((4000 / zTemp) + (10 + mouseHoldIdk / 2)), (Math.PI / 10) + count2 * 5 * (Math.PI / 10) + loopCount / 15, (count2 + 1) * 5 * (Math.PI / 10) - (Math.PI / 10) + loopCount / 15);
                     ctx2.stroke();
                 }
                 if (zTemp > 200) {
@@ -830,8 +893,8 @@
                 }
                 if (zTemp > 0 && (4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20 > 0) {
                     ctx2.beginPath();
-                    ctx2.lineWidth = 10 + 75 / zTemp;
-                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, (4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20, Math.PI / -2, enemies[count1].hP * (2 * Math.PI) / enemies[count1].maxHP - Math.PI / 2);
+                    ctx2.lineWidth = windowMultiplyX(3 + 75 / zTemp);
+                    ctx2.arc(Math.round((fovThing / zTemp) * xTemp + (c.width / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, Math.round((fovThing / zTemp) * yTemp + (c.height / 2)) + Math.random() * mouseHoldIdk / 1 - mouseHoldIdk / 2, windowMultiplyX((4000 / zTemp) + (10 + mouseHoldIdk / 2) + 20), Math.PI / -2, enemies[count1].hP * (2 * Math.PI) / enemies[count1].maxHP - Math.PI / 2);
                     ctx2.stroke();
                 }
             }
@@ -903,21 +966,41 @@
             zVel = zVel * 0.98;
             fireCount--;
             loopCount++;
-            //secondsCount++;
-            //whatTime = new Date();
-            //thisSecond = whatTime.getMilliseconds();
+            secondsCount++;
+            whatTime = new Date();
             //if (Math.floor(thisSecond / 200) != Math.floor(pastSecond / 200)) {
             //    pastSecond = whatTime.getMilliseconds();
             //    FPS = secondsCount;
             //    secondsCount = 0;
             //}
-            //speedRegulator = (1000 / 60) - (200 / FPS)
-            //if (speedRegulator < 0) {
-            //    speedRegulator = 0;
-            //}
-            ////ctx.fillStyle = "White";
-            ////ctx.font = "48px Arial"
-            ////ctx.fillText(speedRegulator, 15, 50);
+            thisSecond = whatTime.getMilliseconds();
+            if (thisSecond - pastSecond > 0) {
+                FPS = 1000 / Math.abs(thisSecond - pastSecond);
+                fpsCache = fpsCache + FPS;
+            }
+            pastSecond = whatTime.getMilliseconds();
+            ctx2.fillStyle = "hsla(0, 0%, 0%, 0.5)";
+            ctx2.fillRect(0, 0, 140, 29);
+            ctx2.globalCompositeOperation = "difference";
+            ctx2.fillStyle = "White";
+            ctx2.font = "12px Arial";
+            if (loopCount % 9 == 0) {
+                fpsCache = fpsCache / 9;
+            }
+            if (fpsCache < 50 && loopCount % 9 == 0 && frameSkip < 6) {
+                frameSkip++;
+            } else if (frameSkip > 1 && loopCount % 9 == 0 && fpsCache > 60) {
+                frameSkip--;
+            }
+            if (loopCount % 9 == 0) {
+                FPS2 = fpsCache;
+                fpsCache = 0;
+            }
+            //frameSkip = Math.round((60 / (FPS * 5)));
+            //frameSkip = 3;
+            ctx2.fillText("Frame Skip: " + frameSkip, 3, 12);
+            ctx2.fillText("Frames per Second: " + Math.round(FPS2), 3, 24);
+            ctx2.globalCompositeOperation = "normal";
             //setTimeout(loop, speedRegulator);
             //ctx3.drawImage(c, 0, 0);
             requestAnimationFrame(loop);
