@@ -42,6 +42,7 @@
         document.exitPointerLock();
         //setting up keyboard
         var keys = [];
+        var keys2 = [];
         //counters
         var count1;
         var count2;
@@ -62,11 +63,18 @@
         for (count1 = 0; 256 > count1; count1++) {
             keys.push(false);
         }
+        for (count1 = 0; 256 > count1; count1++) {
+            keys2.push(false);
+        }
         window.addEventListener("keydown", function (e) {
             keys[e.keyCode] = true;
+            if (keys2[e.keyCode] == false) {
+                keys2[e.keyCode] = true;
+            }
         }, false)
         window.addEventListener("keyup", function (e) {
             keys[e.keyCode] = false;
+            keys2[e.keyCode] = false;
         }, false)
         //mouse
         c2.onclick = function () {
@@ -183,6 +191,7 @@
         var jetpackFuelVel = 0;
         //render style
         var renderStyle = 0;
+        var trail = 100;
         //hitpoints
         var hitPoints = 100;
         var crackedGlassEffect = [];
@@ -539,13 +548,13 @@
                 if (renderStyle == 0) {
                     //ctx.globalCompositeOperation = "multiply";
                     //ctx.fillStyle = "hsla(0, 0%, 0%, " + (0.13) + ")";
-                    ctx.fillStyle = "hsla(0, 0%, 0%, " + (Math.sin(loopCount / 2) * 0.04 + 0.08) + ")";
+                    ctx.fillStyle = "hsla(0, 0%, 0%, " + (Math.sin(loopCount / 2) * (1 / (1 + (trail / 8))) + (1 / (1 + (trail / 4)))) + ")";
                     //ctx.fillStyle = "Black";
                     ctx.fillRect(0, 0, c.width, c.height);
                     //ctx.globalCompositeOperation = "normal";
                 } else if (renderStyle == 1) {
                     //ctx.fillStyle = "White"
-                    ctx.fillStyle = "hsla(0, 0%, 100%, " + (0.13) + ")";
+                    ctx.fillStyle = "hsla(0, 0%, 100%, " + (1 / (1 + (trail / 8))) + ")";
                     ctx.fillRect(0, 0, c.width, c.height);
                 } else if (renderStyle == 2) {
                     //ctx.fillStyle = "White"
@@ -980,7 +989,7 @@
             }
             pastSecond = whatTime.getMilliseconds();
             ctx2.fillStyle = "hsla(0, 0%, 0%, 0.5)";
-            ctx2.fillRect(0, 0, 140, 29);
+            ctx2.fillRect(0, 0, 150, 89);
             ctx2.globalCompositeOperation = "difference";
             ctx2.fillStyle = "White";
             ctx2.font = "12px Arial";
@@ -996,10 +1005,25 @@
                 FPS2 = fpsCache;
                 fpsCache = 0;
             }
+            if (keys2[69] == true) {
+                renderStyle = (renderStyle + 1) % 3;
+                keys2[69] = 2;
+            }
+            if (keys[82]) {
+                trail++;
+            }
+            if (keys[70] && trail > 0) {
+                trail--;
+            }
             //frameSkip = Math.round((60 / (FPS * 5)));
             //frameSkip = 3;
             ctx2.fillText("Frame Skip: " + frameSkip, 3, 12);
             ctx2.fillText("Frames per Second: " + Math.round(FPS2), 3, 24);
+            ctx2.fillText("Render Style: " + renderStyle, 3, 36);
+            ctx2.fillText("Trail: " + trail, 3, 48);
+            ctx2.fillText("[E] - Change Render Style", 3, 60);
+            ctx2.fillText("[R] - Increase Trail", 3, 72);
+            ctx2.fillText("[F] - Decrease Trail", 3, 84);
             ctx2.globalCompositeOperation = "normal";
             //setTimeout(loop, speedRegulator);
             //ctx3.drawImage(c, 0, 0);
