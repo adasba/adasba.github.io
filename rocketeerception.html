@@ -7,7 +7,6 @@
 <body>
     <canvas id="canvas1" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:0;"></canvas>
     <script>
-        //i just added this because for some reason I need to edit this to make it work on the github page
         var c = document.getElementById("canvas1");
         var ctx = c.getContext("2d");
         var bullets = [{x: c.width / 2, y: c.height / 2, vel: 1, dir: 0, size: 100, lifeTime: 0}];
@@ -100,7 +99,7 @@
                 bullets[count.c0].y = scale(bullets[count.c0].y, 1, scaleThisMuch);
                 bullets[count.c0].size = scale(bullets[count.c0].size, 2, scaleThisMuch);
                 bullets[count.c0].vel = scale(bullets[count.c0].vel, 2, scaleThisMuch);
-                drawBullet(bullets[count.c0].x, bullets[count.c0].y, bullets[count.c0].dir, bullets[count.c0].size);
+                drawBullet(bullets[count.c0].x * (c.width / 1920), bullets[count.c0].y * (c.height / 1080), bullets[count.c0].dir, bullets[count.c0].size * (c.width / 1920));
                 bullets[count.c0].x = bullets[count.c0].x + Math.cos(bullets[count.c0].dir) * bullets[count.c0].vel;
                 bullets[count.c0].y = bullets[count.c0].y + Math.sin(bullets[count.c0].dir) * bullets[count.c0].vel;
                 bullets[count.c0].vel = bullets[count.c0].vel * 0.96;
