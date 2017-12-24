@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <canvas id="canvas1" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:0;"></canvas>
+    <script>
+        var c = document.getElementById("canvas1");
+        var ctx = c.getContext("2d");
+        var bullets = [{x: c.width / 2, y: c.height / 2, vel: 1, dir: 0, size: 100, lifeTime: 0}];
+        var count = { c0: 0, c1: 0, c2: 0 };
+        var lineSpaces = [32];
+        var lineSpaces2 = [0];
+        var scaleThisMuch = 1.01
+        function canvasResize() {
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+        }
+        window.addEventListener("resize", canvasResize, false);
+        var scaleFactor = 1;
+        function drawBullet(x, y, dir, size) {
+            ctx.lineWidth = Math.log(size) + 1;
+            ctx.fillStyle = "rgb(4, 140, 185)";
+            ctx.strokeStyle = "rgb(42, 96, 114)";
+            ctx.beginPath();
+            ctx.moveTo(x + Math.cos(dir) * size * -0.75 + Math.cos(dir + Math.PI / 2) * size * 0.65, y + Math.sin(dir) * size * -0.75 + Math.sin(dir + Math.PI / 2) * size * 0.65);
+            ctx.lineTo(x + Math.cos(dir) * size * -1.35 + Math.cos(dir + Math.PI / 2) * size * 0.92, y + Math.sin(dir) * size * -1.35 + Math.sin(dir + Math.PI / 2) * size * 0.92);
+            ctx.lineTo(x + Math.cos(dir) * size * -1.35 + Math.cos(dir + Math.PI / 2) * size * -0.92, y + Math.sin(dir) * size * -1.35 + Math.sin(dir + Math.PI / 2) * size * -0.92);
+            ctx.lineTo(x + Math.cos(dir) * size * -0.75 + Math.cos(dir + Math.PI / 2) * size * -0.65, y + Math.sin(dir) * size * -0.75 + Math.sin(dir + Math.PI / 2) * size * -0.65);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+        function scale(scaleNumber, dim, scaleFactor) {
+            if (dim == 0) {
+                return (scaleNumber - 960) * scaleFactor + 960;
+            } else if (dim == 1) {
+                return (scaleNumber - 540) * scaleFactor + 540;
+            } else if (dim == 2) {
+                return scaleNumber * scaleFactor;
+            }
+        }
+        function loop() {
+            ctx.fillStyle = "rgb(203, 203, 203)";
+            ctx.fillRect(0, 0, c.width, c.height);
+            for (count.c2 = 0; lineSpaces.length > count.c2; count.c2++) {
+                lineSpaces[count.c2] = scale(lineSpaces[count.c2], 2, scaleThisMuch);
+                if (lineSpaces[count.c2] < 110) {
+                    ctx.strokeStyle = "rgba(188, 188, 188, " + (lineSpaces[count.c2] - 60) / 50 + ")";
+                } else {
+                    ctx.strokeStyle = "rgb(188, 188, 188)";
+                }
+                ctx.lineWidth = lineSpaces[count.c2] / 18;
+                ctx.beginPath();
+                for (count.c0 = 0.5; Math.ceil(c.width / lineSpaces[count.c2] / 2) > count.c0; count.c0 = count.c0 + 2) {
+                    ctx.moveTo(c.width / 2 + lineSpaces[count.c2] * count.c0, -1 * (lineSpaces[count.c2] / 10));
+                    ctx.lineTo(c.width / 2 + lineSpaces[count.c2] * count.c0, c.height + (lineSpaces[count.c2] / 10));
+                    ctx.lineTo(c.width / 2 + lineSpaces[count.c2] * (count.c0 + 1), c.height + (lineSpaces[count.c2] / 10));
+                    ctx.lineTo(c.width / 2 + lineSpaces[count.c2] * (count.c0 + 1), -1 * (lineSpaces[count.c2] / 10));
+                }
+                for (count.c0 = 0.5; Math.ceil(c.width / lineSpaces[count.c2] / 2) > count.c0; count.c0 = count.c0 + 2) {
+                    ctx.moveTo(c.width / 2 - lineSpaces[count.c2] * count.c0, -1 * (lineSpaces[count.c2] / 10));
+                    ctx.lineTo(c.width / 2 - lineSpaces[count.c2] * count.c0, c.height + (lineSpaces[count.c2] / 10));
+                    ctx.lineTo(c.width / 2 - lineSpaces[count.c2] * (count.c0 + 1), c.height + (lineSpaces[count.c2] / 10));
+                    ctx.lineTo(c.width / 2 - lineSpaces[count.c2] * (count.c0 + 1), -1 * (lineSpaces[count.c2] / 10));
+                }
+                ctx.stroke();
+                ctx.beginPath();
+                for (count.c0 = 0.5; Math.ceil(c.height / lineSpaces[count.c2] / 2) > count.c0; count.c0 = count.c0 + 2) {
+                    ctx.moveTo(-1 * (lineSpaces[count.c2] / 10), c.height / 2 + lineSpaces[count.c2] * count.c0);
+                    ctx.lineTo(c.width + (lineSpaces[count.c2] / 10), c.height / 2 + lineSpaces[count.c2] * count.c0);
+                    ctx.lineTo(c.width + (lineSpaces[count.c2] / 10), c.height / 2 + lineSpaces[count.c2] * (count.c0 + 1));
+                    ctx.lineTo(-1 * (lineSpaces[count.c2] / 10), c.height / 2 + lineSpaces[count.c2] * (count.c0 + 1));
+                }
+                for (count.c0 = 0.5; Math.ceil(c.height / lineSpaces[count.c2] / 2) > count.c0; count.c0 = count.c0 + 2) {
+                    ctx.moveTo(-1 * (lineSpaces[count.c2] / 10), c.height / 2 - lineSpaces[count.c2] * count.c0);
+                    ctx.lineTo(c.width + (lineSpaces[count.c2] / 10), c.height / 2 - lineSpaces[count.c2] * count.c0);
+                    ctx.lineTo(c.width + (lineSpaces[count.c2] / 10), c.height / 2 - lineSpaces[count.c2] * (count.c0 + 1));
+                    ctx.lineTo(-1 * (lineSpaces[count.c2] / 10), c.height / 2 - lineSpaces[count.c2] * (count.c0 + 1));
+                }
+                ctx.stroke();
+                if (lineSpaces[count.c2] > 300 && lineSpaces2[count.c2] == 0) {
+                    lineSpaces.push(60);
+                    lineSpaces2.push(0);
+                    lineSpaces2[count.c2] = 1;
+                }
+                if (lineSpaces[count.c2] > c.width * 2) {
+                    lineSpaces.splice(count.c2, 1);
+                    lineSpaces2.splice(count.c2, 1);
+                }
+            }
+            for (count.c0 = 0; bullets.length > count.c0; count.c0++) {
+                bullets[count.c0].x = scale(bullets[count.c0].x, 0, scaleThisMuch);
+                bullets[count.c0].y = scale(bullets[count.c0].y, 1, scaleThisMuch);
+                bullets[count.c0].size = scale(bullets[count.c0].size, 2, scaleThisMuch);
+                bullets[count.c0].vel = scale(bullets[count.c0].vel, 2, scaleThisMuch);
+                drawBullet(bullets[count.c0].x, bullets[count.c0].y, bullets[count.c0].dir, bullets[count.c0].size);
+                bullets[count.c0].x = bullets[count.c0].x + Math.cos(bullets[count.c0].dir) * bullets[count.c0].vel;
+                bullets[count.c0].y = bullets[count.c0].y + Math.sin(bullets[count.c0].dir) * bullets[count.c0].vel;
+                bullets[count.c0].vel = bullets[count.c0].vel * 0.96;
+                bullets[count.c0].lifeTime++;
+            }
+            for (count.c0 = 0; bullets.length > count.c0; count.c0++) {
+                if (bullets[count.c0].lifeTime % 7 == 6 && bullets[count.c0].lifeTime > 40) {
+                    bullets.push({ x: bullets[count.c0].x, y: bullets[count.c0].y, vel: Math.log(bullets[count.c0].size) + 6, dir: bullets[count.c0].dir + Math.PI + 1.5 * Math.random() - 0.75, size: bullets[count.c0].size / (1.5 + Math.log10(bullets[count.c0].size / 3.5) + Math.random() * 0.3 - 0.15), lifeTime: 0 });
+                    bullets[count.c0].vel = bullets[count.c0].vel + Math.log(bullets[count.c0].size) * 2;
+                }
+                if (bullets[count.c0].lifeTime > 1000 || bullets[count.c0].x > 1920 + 1.4 * bullets[count.c0].size || bullets[count.c0].x < 0 - 1.4 * bullets[count.c0].size || bullets[count.c0].y > 1080 + 1.4 * bullets[count.c0].size || bullets[count.c0].y < 0 - 1.4 * bullets[count.c0].size || bullets[count.c0].size > 2000) {
+                    bullets.splice(count.c0, 1);
+                }
+            }
+            if (bullets.length > 1000) {
+                scaleThisMuch = scaleThisMuch + 0.0001;
+            }
+            if (bullets.length > 4000) {
+                scaleThisMuch = scaleThisMuch + 0.001;
+            }
+            if (bullets.length < 20 && count.c1 > 150) {
+                scaleThisMuch = scaleThisMuch - 0.0005;
+            }
+            if (bullets[0].size < 15) {
+                scaleThisMuch = scaleThisMuch + 0.0001;
+            }
+            if (bullets[bullets.length - 1].size > 400) {
+                scaleThisMuch = scaleThisMuch - 0.0005;
+            }
+            if (bullets[bullets.length - 1].size > 1000) {
+                scaleThisMuch = scaleThisMuch - 0.001;
+            }
+            if (scaleThisMuch < 1) {
+                scaleThisMuch = scaleThisMuch + 0.0005;
+            }
+            if (scaleThisMuch > 1.08) {
+                scaleThisMuch = scaleThisMuch - 0.0002;
+            }
+            if (bullets[bullets.length - 1].size < 15) {
+                scaleThisMuch = scaleThisMuch + 0.0002;
+            }
+            bullets.sort(function (a, b) { return a.size - b.size });
+            count.c1++;
+            requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
+</body>
+</html>
