@@ -9,7 +9,6 @@
     <img id="bulletImage2" src="DiepNewSkimmerBullet.png" />
     <canvas id="canvas1" width="1920" height="1080" style=" position:absolute; top:0px; left:0px; z-index:0;"></canvas>
     <script>
-        //edit so the github pages work
         var c = document.getElementById("canvas1");
         var ctx = c.getContext("2d");
         var bullets = [{x: c.width / 3, y: c.height / 2, vel: 3, dir: 0, size: 40, lifeTime: 0, type: 1}];
@@ -125,8 +124,8 @@
                 }
                 if (bullets[count.c0].type == 1) {
                     drawBullet(bullets[count.c0].x * (c.width / 1920), bullets[count.c0].y * (c.height / 1080), bullets[count.c0].lifeTime / 17, bullets[count.c0].size * (c.width / 1920), bullets[count.c0].type);
-                    if (bullets[count.c0].vel > Math.log(bullets[count.c0].size) + 5) {
-                        bullets[count.c0].vel = bullets[count.c0].vel * 0.97
+                    if (bullets[count.c0].vel > Math.log(bullets[count.c0].size) / 1.5 + 7) {
+                        bullets[count.c0].vel = bullets[count.c0].vel * 0.95
                     }
                 }
                 bullets[count.c0].lifeTime++;
@@ -136,7 +135,7 @@
                     bullets.push({ x: bullets[count.c0].x, y: bullets[count.c0].y, vel: Math.log(bullets[count.c0].size) + 6, dir: bullets[count.c0].dir + Math.PI + 1.5 * Math.random() - 0.75, size: bullets[count.c0].size / (1.5 + Math.log10(bullets[count.c0].size / 3.5) + Math.random() * 0.3 - 0.15), lifeTime: 0, type: 0 });
                     bullets[count.c0].vel = bullets[count.c0].vel + Math.log(bullets[count.c0].size) * 2;
                 }
-                if (bullets[count.c0].lifeTime % 5 == 4 && bullets[count.c0].type == 1 && bullets[count.c0].lifeTime > Math.log(bullets.length) * 2 + 15) {
+                if (bullets[count.c0].lifeTime % 6 == 5 && bullets[count.c0].type == 1 && bullets[count.c0].lifeTime > Math.log(bullets.length) * 3) {
                     bullets.push({ x: bullets[count.c0].x + Math.cos(bullets[count.c0].dir) * bullets[count.c0].size / 1.5, y: bullets[count.c0].y + Math.sin(bullets[count.c0].dir) * bullets[count.c0].size / 1.5, vel: 2.5 * Math.log(bullets[count.c0].size) + 15, dir: bullets[count.c0].lifeTime / 17 + Math.PI + 0.5 * Math.random() - 0.25, size: bullets[count.c0].size / (2.5 + Math.log10(bullets[count.c0].size / 3.5) + Math.random() * 0.3 - 0.15), lifeTime: 0, type: 1 });
                     bullets.push({ x: bullets[count.c0].x + Math.cos(bullets[count.c0].dir + Math.PI) * bullets[count.c0].size / 1.5, y: bullets[count.c0].y + Math.sin(bullets[count.c0].dir + Math.PI) * bullets[count.c0].size / 1.5, vel: 2.5 * Math.log(bullets[count.c0].size) + 15, dir: bullets[count.c0].lifeTime / 17 + 0.5 * Math.random() - 0.25, size: bullets[count.c0].size / (2.5 + Math.log10(bullets[count.c0].size / 3.5) + Math.random() * 0.3 - 0.15), lifeTime: 0, type: 1 });
                 }
@@ -151,10 +150,10 @@
                 scaleThisMuch = scaleThisMuch + 0.001;
             }
             if (bullets.length < 40 && count.c1 > 150) {
-                scaleThisMuch = scaleThisMuch - 0.0005;
+                scaleThisMuch = scaleThisMuch - 0.0015;
             }
             if (bullets.length < 10 && count.c1 > 150) {
-                scaleThisMuch = scaleThisMuch - 0.0012;
+                scaleThisMuch = scaleThisMuch - 0.0018;
             }
             if (bullets[0].size < 15) {
                 scaleThisMuch = scaleThisMuch + 0.0001;
@@ -168,11 +167,14 @@
             if (scaleThisMuch < 1) {
                 scaleThisMuch = scaleThisMuch + 0.0005;
             }
-            if (scaleThisMuch > 1.08) {
-                scaleThisMuch = scaleThisMuch - 0.00035;
+            if (scaleThisMuch > 1.07) {
+                scaleThisMuch = scaleThisMuch - 0.0025;
             }
             if (bullets[bullets.length - 1].size < 15) {
                 scaleThisMuch = scaleThisMuch + 0.0002;
+            }
+            if (bullets[bullets.length - 1].size < 3 && bullets.length < 40) {
+                scaleThisMuch = scaleThisMuch - 0.001;
             }
             bullets.sort(function (a, b) { return a.size - b.size });
             count.c1++;
