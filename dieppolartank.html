@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
 </head>
 <body>
-    <canvas id="myCanvas" width="1920" height="1080" oncontextmenu="return false;"></canvas>
+    <img id="backgroundImage" src="DiepBackground.png" style=" position:absolute; top:0px; left:0px; width:1920px; height:1080px; "/>
+    <canvas id="myCanvas" width="1920" height="1080" oncontextmenu="return false;" style=" position:absolute; top:0px; left:0px;"></canvas>
     <script>
         //event listeners and variables
-        //edited the thing to fix stupid bugs
         var c = document.getElementById("myCanvas");
         var ctx = c.getContext("2d");
         var xPos = 400
@@ -43,6 +43,13 @@
         var bulletCounter2 = 0
         var animStage = 0;
         var animVel = 0;
+        var bg = document.getElementById("backgroundImage");
+        function canvasResize() {
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+            bg.style = " position:absolute; top:0px; left:0px; width:" + window.innerWidth + "px; height:" + window.innerHeight + "px; ";
+        }
+        window.addEventListener("resize", canvasResize, false);
         window.addEventListener('keydown', function (e) {
             keyState[e.keyCode || e.which] = true;
         }, true);
@@ -85,7 +92,7 @@
         function render() {
             ctx.beginPath()
             //clear
-            ctx.clearRect(0, 0, 1920, 1080)
+            ctx.clearRect(0, 0, c.width, c.height)
             //bullets
             counter = 0
             while (counter < bullets.length) {
