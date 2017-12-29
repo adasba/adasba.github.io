@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+</head>
+<body>
+    <canvas id="myCanvas" width="1920" height="1080" oncontextmenu="return false;"></canvas>
+    <script>
+        //event listeners and variables
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        var xPos = 400
+        var yPos = 400
+        var xPos2 = 600
+        var yPos2 = 400
+        var xPos3 = 600
+        var yPos3 = 400
+        var oldXPos2 = 600
+        var oldYPos2 = 400
+        var magnitude = 200;
+        var tempDir = 0;
+        var tempMag = 200;
+        var oldDir;
+        var dir = 0;
+        var xVel = 0
+        var yVel = 0
+        var relX = 0
+        var relY = 0
+        var mousePos = {}
+        var keyState = {}
+        var dirConstX = 0
+        var dirConstY = 0
+        var dirConstX2 = 0
+        var dirConstY2 = 0
+        var bullets = []
+        var counter = 0
+        var counter2 = 0
+        var counter3 = 0
+        var counter4 = 0
+        var bulletCounter = 0
+        var bulletCounter2 = 0
+        var animStage = 0;
+        var animVel = 0;
+        window.addEventListener('keydown', function (e) {
+            keyState[e.keyCode || e.which] = true;
+        }, true);
+        window.addEventListener('keyup', function (e) {
+            keyState[e.keyCode || e.which] = false;
+        }, true);
+        var mice = [0, 0, 0, 0]
+        var mouseIsDown;
+        function mouseDown(e) {
+            mice[e.which] = 1;
+        }
+        function mouseUp(e) {
+            mice[e.which] = 0;
+        }
+        c.addEventListener("mousedown", mouseDown, false);
+        c.addEventListener("mouseup", mouseUp, false);
+        //barrel function
+        function renderBarrel(length, width, offset, xMulti, yMulti, xMulti2, yMulti2, x, y) {
+            ctx.closePath()
+            ctx.beginPath()
+            ctx.strokeStyle = "hsl(0,0%,60%)"
+            ctx.lineWidth = width
+            ctx.moveTo(x + xMulti2 * offset, y + yMulti2 * offset)
+            ctx.lineTo(xMulti * length + x + xMulti2 * offset, yMulti * length + y + yMulti2 * offset)
+            ctx.stroke()
+            ctx.closePath()
+            ctx.beginPath()
+            ctx.strokeStyle = "hsl(0,0%,33%)"
+            ctx.lineWidth = 5
+            ctx.moveTo(x + xMulti2 * (width / 2 - 3 + offset), y + yMulti2 * (width / 2 - 3 + offset))
+            ctx.lineTo(xMulti * length + x + xMulti2 * (width / 2 - 3 + offset), yMulti * length + y + yMulti2 * (width / 2 - 3 + offset))
+            ctx.moveTo(x + xMulti2 * ((width / 2 - 3) * -1 + offset), y + yMulti2 * ((width / 2 - 3) * -1 + offset))
+            ctx.lineTo(xMulti * length + x + xMulti2 * ((width / 2 - 3) * -1 + offset), yMulti * length + y + yMulti2 * ((width / 2 - 3) * -1 + offset))
+            ctx.moveTo(xMulti * length + x + xMulti2 * (width / 2 - 0.5 + offset), yMulti * length + y + yMulti2 * (width / 2 - 0.5 + offset))
+            ctx.lineTo(xMulti * length + x + xMulti2 * ((width / 2 - 0.5) * -1 + offset), yMulti * length + y + yMulti2 * ((width / 2 - 0.5) * -1 + offset))
+            ctx.stroke()
+            ctx.beginPath()
+        }
+        //render function
+        function render() {
+            ctx.beginPath()
+            //clear
+            ctx.clearRect(0, 0, 1920, 1080)
+            //bullets
+            counter = 0
+            while (counter < bullets.length) {
+                ctx.beginPath()
+                ctx.lineWidth = 1
+                ctx.fillStyle = "hsl(192,100%,40%)"
+                ctx.arc(bullets[counter].x, bullets[counter].y, 20, 0, 2 * Math.PI);
+                ctx.fill()
+                ctx.lineWidth = 5
+                ctx.strokeStyle = "hsl(0,0%,33%)"
+                ctx.arc(bullets[counter].x, bullets[counter].y, 20, 0, 2 * Math.PI);
+                ctx.stroke()
+                ctx.closePath()
+                counter = counter + 1
+            }
+            //barrel
+
+            //tank body
+            if (animStage == 0) {
+                ctx.beginPath()
+                ctx.fillStyle = "hsl(0,0%,33%)"
+                ctx.moveTo(xPos2 + Math.cos(counter2 / 80) * 31, yPos2 + Math.sin(counter2 / 80) * 31)
+                for (counter4 = 1; 8 > counter4; counter4++) {
+                    ctx.lineTo(xPos2 + Math.cos(counter2 / 80 + counter4 * Math.PI / 4) * (32 + 20 * (counter4 % 2)), yPos2 + Math.sin(counter2 / 80 + counter4 * Math.PI / 4) * (32 + 20 * (counter4 % 2)));
+                }
+                ctx.fill()
+            }
+            ctx.beginPath()
+           ctx.lineWidth = 40
+           ctx.strokeStyle = "hsla(192,100%,40%, 0.5)"
+           ctx.moveTo(xPos, yPos)
+           ctx.lineTo(xPos3, yPos3)
+           ctx.stroke()
+           renderBarrel(90, 50, 0, dirConstX, dirConstY, dirConstX2, dirConstY2, xPos, yPos)
+            ctx.beginPath()
+            ctx.lineWidth = 1
+            ctx.fillStyle = "hsl(192,100%,40%)"
+            ctx.arc(xPos, yPos, 50, 0, 2 * Math.PI);
+            ctx.fill()
+            ctx.lineWidth = 5
+            ctx.strokeStyle = "hsl(0,0%,33%)"
+            ctx.arc(xPos, yPos, 50, 0, 2 * Math.PI);
+            ctx.stroke()
+            ctx.closePath()
+            renderBarrel(50, 60, 0, Math.cos(tempDir), Math.sin(tempDir), Math.cos(tempDir + Math.PI * 0.5), Math.sin(tempDir + Math.PI * 0.5), xPos3, yPos3)
+            ctx.beginPath();
+            ctx.lineWidth = 1
+            ctx.fillStyle = "hsl(192,100%,40%)"
+            ctx.arc(xPos3, yPos3, 35, 0, 2 * Math.PI);
+            ctx.fill()
+            ctx.lineWidth = 5
+            ctx.strokeStyle = "hsl(0,0%,33%)"
+            ctx.arc(xPos3, yPos3, 35, 0, 2 * Math.PI);
+            ctx.stroke()
+            ctx.closePath()
+            renderBarrel(50, 60, 0, Math.cos(tempDir + Math.PI), Math.sin(tempDir + Math.PI), Math.cos(tempDir + Math.PI * 1.5), Math.sin(tempDir + Math.PI * 1.5), xPos, yPos)
+            ctx.beginPath();
+            ctx.lineWidth = 1
+            ctx.fillStyle = "hsl(0,0%,60%)"
+            ctx.arc(xPos, yPos, 35, 0, 2 * Math.PI);
+            ctx.fill()
+            ctx.lineWidth = 5
+            ctx.strokeStyle = "hsl(0,0%,33%)"
+            ctx.arc(xPos, yPos, 35, 0, 2 * Math.PI);
+            ctx.stroke()
+        }
+        //mouse pos
+        function getMousePos(canvas, evt) {
+            var rect = canvas.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+        var canvas = document.getElementById('myCanvas');
+        var context = canvas.getContext('2d');
+
+        canvas.addEventListener('mousemove', function (evt) {
+            mousePos = getMousePos(canvas, evt);
+        }, false);
+
+        //loop function
+        function loop() {
+            if (animStage == 1) {
+                if (tempMag > 30) {
+                    tempMag = tempMag - animVel;
+                    tempDir = oldDir;
+                    animVel = animVel + 5;
+                    animVel = animVel * 0.97
+                } else {
+                    tempMag = 30;
+                    animStage = 2;
+                    animVel = 0;
+                }
+            }
+            if (animStage == 2) {
+                if (tempMag < magnitude) {
+                    tempMag = tempMag + animVel;
+                    tempDir = dir;
+                    animVel = animVel + 5;
+                    animVel = animVel * 0.97
+                } else {
+                    animStage = 0;
+                    tempMag = magnitude
+                }
+            }
+            xPos3 = xPos + Math.cos(tempDir) * tempMag * -1;
+            yPos3 = yPos + Math.sin(tempDir) * tempMag * -1;
+            if (mice[3] == 1 && animStage == 0) {
+                animVel = 0;
+                oldXPos2 = xPos2
+                oldYPos2 = yPos2
+                xPos2 = mousePos.x;
+                yPos2 = mousePos.y;
+                bulletCounter2 = 100;
+                magnitude = Math.sqrt(Math.pow(xPos - xPos2, 2) + Math.pow(yPos - yPos2, 2));
+                dir = Math.atan2(yPos - yPos2, xPos - xPos2);
+                if (magnitude < 150) {
+                    magnitude = 150
+                    xPos2 = xPos + Math.cos(dir + Math.PI) * magnitude;
+                    yPos2 = yPos + Math.sin(dir + Math.PI) * magnitude;
+                }
+                if (magnitude > 750) {
+                    magnitude = 750
+                    xPos2 = xPos + Math.cos(dir + Math.PI) * magnitude;
+                    yPos2 = yPos + Math.sin(dir + Math.PI) * magnitude;
+                }
+                animStage = 1;
+            }
+            if (animStage == 0) {
+                if (keyState[87]) {
+                    yVel = yVel + 0.7
+                }
+                if (keyState[83]) {
+                    yVel = yVel - 0.7
+                }
+                if (keyState[65]) {
+                    xVel = xVel - 0.7
+                }
+                if (keyState[68]) {
+                    xVel = xVel + 0.7
+                }
+            }
+            if (magnitude < 150) {
+                magnitude = 150
+            }
+            if (magnitude > 750) {
+                magnitude = 750
+            }
+            ctx.clearRect(0, 0, 800, 800)
+            counter2 = counter2 + 1
+            //xPos = xPos + xVel
+            //yPos = yPos + yVel
+            oldDir = Math.atan2(yPos - oldYPos2, xPos - oldXPos2);
+            if (animStage == 0) {
+                dir = dir + xVel / 440;
+                magnitude = magnitude + yVel / 2;
+            }
+            if (animStage == 0) {
+                tempMag = magnitude;
+                tempDir = dir;
+                xPos3 = xPos2;
+                yPos3 = yPos2;
+            }
+            xPos = xPos2 + Math.cos(dir) * magnitude;
+            yPos = yPos2 + Math.sin(dir) * magnitude;
+            xVel = xVel * 0.95
+            yVel = yVel * 0.95
+            relX = mousePos.x - xPos
+            relY = mousePos.y - yPos
+            dirConstX = Math.cos(Math.atan2(relY, relX));
+            dirConstY = Math.sin(Math.atan2(relY, relX));
+            //dirConstX = Math.cos(Math.atan(relY / relX))
+            //dirConstY = Math.sin(Math.atan(relY / relX))
+            dirConstX2 = Math.cos(Math.atan2(relY, relX) + Math.PI / 2);
+            dirConstY2 = Math.sin(Math.atan2(relY, relX) + Math.PI / 2);
+            if (bulletCounter < 0 && mice[1] == 1) {
+                //if (relX > 0) {
+                //    bulletsX.splice(0, 0, xPos + dirConstX * 60)
+                //    bulletsY.splice(0, 0, yPos + dirConstY * 60)
+                //    bulletsXVel.splice(0, 0, dirConstX)
+                //    bulletsYVel.splice(0, 0, dirConstY)
+                //}
+                //if (relX < 0) {
+                //    bulletsX.splice(0, 0, xPos + dirConstX * -60)
+                //    bulletsY.splice(0, 0, yPos + dirConstY * -60)
+                //    bulletsXVel.splice(0, 0, dirConstX * -1)
+                //    bulletsYVel.splice(0, 0, dirConstY * -1)
+                //}
+                bullets.push({ x: xPos + dirConstX * 60, y: yPos + dirConstY * 60, xVel: dirConstX, yVel: dirConstY, lifeTime: 0 })
+                bulletCounter = 25
+            }
+            //if (relX < 0) {
+            //    dirConstX = dirConstX * -1
+            //    dirConstY = dirConstY * -1
+            //}
+            render()
+            for (counter3 = 0; counter3 < bullets.length; counter3++) {
+                bullets[counter3].x = bullets[counter3].x + bullets[counter3].xVel * 17
+                bullets[counter3].y = bullets[counter3].y + bullets[counter3].yVel * 17
+                bullets[counter3].lifeTime++
+                if (bullets[counter3].lifeTime > 130) {
+                    bullets.splice(counter3, 1)
+                }
+            }
+            bulletCounter--;
+            bulletCounter2--;
+            setTimeout(loop, 10)
+        }
+        loop()
+    </script>
+</body>
+</html>
