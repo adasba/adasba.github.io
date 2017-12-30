@@ -14,7 +14,6 @@
     <canvas id="myCanvas" width="1920" height="1080" oncontextmenu="return false;"></canvas>
     <script>
         //event listeners and variables
-        //im putting this here because otherwise it doens't work for some reason
         var c = document.getElementById("myCanvas");
         var ctx = c.getContext("2d");
         var xPos = 400
@@ -124,7 +123,7 @@
             }
             //barrel
             for (counter = 0; tanks.length > counter; counter++) {
-                if (mice[3] == 0) {
+                if (mice[3] == 0 || mice[1] == 1) {
                     renderBarrel(1.9 * tanks[counter].size, 1 * tanks[counter].size, 0, Math.cos(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x)), Math.sin(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x)), Math.cos(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x) + Math.PI / 2), Math.sin(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x) + Math.PI / 2), tanks[counter].x, tanks[counter].y)
                 } else {
                     renderBarrel(1.9 * tanks[counter].size, 1 * tanks[counter].size, 0, Math.cos(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x) + Math.PI), Math.sin(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x) + Math.PI), Math.cos(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x) + Math.PI * 1.5), Math.sin(Math.atan2(mousePos.y - tanks[counter].y, mousePos.x - tanks[counter].x) + Math.PI * 1.5), tanks[counter].x, tanks[counter].y)
@@ -195,7 +194,7 @@
                     tanks[counter].timer = 25
                 }
                 if (tanks[counter].timer < 0 && mice[3] == 1) {
-                    bullets.push({ x: tanks[counter].x + Math.cos(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x) + Math.PI) * tanks[counter].size * 1.5, y: tanks[counter].y + Math.sin(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x) + Math.PI) * tanks[counter].size * 1.5, xVel: Math.cos(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x)), yVel: Math.sin(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x)), lifeTime: 0, size: tanks[counter].size / 3 })
+                    bullets.push({ x: tanks[counter].x + Math.cos(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x)) * tanks[counter].size * 1.5, y: tanks[counter].y + Math.sin(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x)) * tanks[counter].size * 1.5, xVel: Math.cos(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x)), yVel: Math.sin(Math.atan2(tanks[counter].y - mousePos.y, tanks[counter].x - mousePos.x)), lifeTime: 0, size: tanks[counter].size / 3 })
                     tanks[counter].timer = 25
                 }
                 tanks[counter].splitTimer--;
