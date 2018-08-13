@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html>
     <head>
-
+        <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
     </head>
     <body>
         <canvas width=1920 height=1080 id="canvas2" style="object-fit:contain; width: 100%; height: 100%; position:absolute; top:0px; left:0px; z-index: -1"></canvas>
+        <canvas width=1920 height=1080 id="canvas3" style="object-fit:contain; width: 100%; height: 100%; position:absolute; top:0px; left:0px; z-index: 2"></canvas>
         <canvas width=1920 height=1080 id="canvas" style="object-fit:contain; width: 100%; height: 100%; position:absolute; top:0px; left:0px;"></canvas>
+        <script src="levels.js"></script>
         <script>
+            console.log(lvls);
             //counters
             var i = 0;
             var i2 = 0;
             var i3 = 0;
 
             //loop counter
-            var li = 0;
+            var li = 5999;
+
+            //level counter
+            var lvi = 0;
 
             //canvas and context
             var c = document.getElementById("canvas");
@@ -22,9 +28,16 @@
             //canvas and context
             var c2 = document.getElementById("canvas2");
             var ctx2 = c2.getContext("2d");
+
+            //canvas and context
+            var c3 = document.getElementById("canvas3");
+            var ctx3 = c3.getContext("2d");
             
             //the player
             var p = { x: 960, y: 540, hp: 100, dir: 0, dx: 0, dy: 0, shoot: 0, side: "p", r: 24, mhp: 100 };
+
+            //boss info
+            var b = { x: 0, y: 0 };
 
             //all objects on screen
             var o = [];
@@ -146,10 +159,10 @@
                 ctx.translate(x, y);
                 ctx.rotate(dir);
                 ctx.beginPath();
-                ctx.moveTo(0, width / -2);
-                ctx.lineTo(height, width / -2);
-                ctx.lineTo(height, width / 2);
-                ctx.lineTo(0, width / 2);
+                ctx.moveTo(yOffset, width / -2 + xOffset);
+                ctx.lineTo(height + yOffset, width / -2 + xOffset);
+                ctx.lineTo(height + yOffset, width / 2 + xOffset);
+                ctx.lineTo(yOffset, width / 2 + xOffset);
                 ctx.closePath();
                 ctx.lineWidth = 4;
                 ctx.fill();
@@ -173,6 +186,26 @@
                 ctx.stroke();
             }
 
+            //polygon
+            function polygon(x, y, sides, radius, offset) {
+                for (var ii = 0; sides > ii; ii++) {
+                    ctx.lineTo(x + Math.cos(tau / sides * ii + offset) * radius, y + Math.sin(tau / sides * ii + offset) * radius);
+                }
+            }
+
+            function dText(text, x, y, size) {
+                ctx3.strokeStyle = "#565656";
+                ctx3.fillStyle = "#FFFFFF";
+                ctx3.lineWidth = 4;
+                if (size == undefined) {
+                    ctx3.font = "18px Ubuntu";
+                } else {
+                    ctx3.font = size + "px Ubuntu";
+                }
+                ctx3.strokeText(text, x, y);
+                ctx3.fillText(text, x, y);
+            }
+
             //color schemes
             function cScheme(center, border) {
                 this.center = center;
@@ -180,6 +213,15 @@
                 this.set = function() {
                     ctx.fillStyle = this.center;
                     ctx.strokeStyle = this.border;
+                }
+            }
+
+            //offsets stuff
+            function offset(obj, x, y, dir) {
+                if (dir == undefined) {
+                    return { x: Math.cos(obj.dir + tau / 4) * x + Math.cos(obj.dir) * y, y: Math.sin(obj.dir + tau / 4) * x + Math.sin(obj.dir) * y };
+                } else {
+                    return { x: Math.cos(obj.dir + tau / 4 + dir) * x + Math.cos(obj.dir + dir) * y, y: Math.sin(obj.dir + tau / 4 + dir) * x + Math.sin(obj.dir + dir) * y };
                 }
             }
             
@@ -241,26 +283,44 @@
                 obj.dy *= friction;
             }
 
-            for (i = 0; 10 > i; i++) {
-                o.push(new tank(960 + 1000 * Math.cos(tau * (i / 10)), 540 + 1000 * Math.sin(tau * (i / 10)), 100, function() { 
-                    dBarrel(this.x, this.y, 20, 44, 0, 0, this.dir, diepGrey);
-                    dCircle(this.x, this.y, 24, diepBlue);
-                    hBar(this);
-                }, 3, function() {
-                    this.timer++;
-                    simpleMoveBehavior1(this, 0.15, 0.98);
-                    if (this.timer % 50 == 0) {
-                        o.push(new bullet(this.x, this.y, this.dir, 12, function() { dCircle(this.x, this.y, 10, diepBlue); }, 100, "e", 12, 25, 5));
-                    }
-                }, 24, "e"));
+            //background
+            ctx2.fillStyle = "#CCCCCC";
+            ctx2.fillRect(0, 0, c.width, c.height)
+            ctx2.lineWidth = 1;
+
+            ctx2.beginPath();
+            ctx2.strokeStyle = "#C3C3C3";
+            for (i = 0; Math.ceil(c.width / 40 + 1) > i; i++) {
+                ctx2.lineTo(2 * i * 20, -10);
+                ctx2.lineTo(2 * i * 20, c.height + 10);
+                ctx2.lineTo((2 * i + 1) * 20, c.height + 10);
+                ctx2.lineTo((2 * i + 1) * 20, -10);
             }
-            
+            ctx2.stroke();
+
+            ctx2.beginPath();
+            ctx2.strokeStyle = "#C3C3C3";
+            for (i = 0; Math.ceil(c.height / 40 + 1) > i; i++) {
+                ctx2.lineTo(-10, 2 * i * 20);
+                ctx2.lineTo(c.width + 10, 2 * i * 20);
+                ctx2.lineTo(c.width + 10, (2 * i + 1) * 20);
+                ctx2.lineTo(-10, (2 * i + 1) * 20);
+            }
+            ctx2.stroke();
+
+            ctx2.lineWidth = 4;
+
             //loop function that is triggered every frame
             function loop() {
+                //background
+                ctx.clearRect(0, 0, c.width, c.height);
+                ctx3.clearRect(0, 0, c.width, c.height);
+
                 li++;
-                if (li % 9 == 0) {
-                    //create bullet storm thingy
-                    o.push(new bullet(960 + 2000 * Math.cos(li / 12), 540 + 2000 * Math.sin(li / 12), li / 12 + tau / 2, 12, function() { dCircle(this.x, this.y, 10, diepBlue); }, 400, "e", 12, 25, 5));
+                for (i = 0; lvls[lvi].patterns.length > i; i++) {
+                    if (li >= lvls[lvi].patterns[i].start && li <= lvls[lvi].patterns[i].end) {
+                        lvls[lvi].patterns[i].func();
+                    }
                 }
 
                 //set canvas settings
@@ -293,35 +353,6 @@
                     o.push(new bullet(p.x, p.y, p.dir, 12, function() { dCircle(this.x, this.y, 10, diepBlue); }, 100, "p", 12, 25, 5));
                 }
                 p.shoot--;
-                
-                //background
-                ctx.clearRect(0, 0, c.width, c.height);
-
-                ctx2.fillStyle = "#CCCCCC";
-                ctx2.fillRect(0, 0, c.width, c.height)
-                ctx2.lineWidth = 1;
-
-                ctx2.beginPath();
-                ctx2.strokeStyle = "#C3C3C3";
-                for (i = 0; Math.ceil(c.width / 40 + 1) > i; i++) {
-                    ctx2.lineTo(2 * i * 20, -10);
-                    ctx2.lineTo(2 * i * 20, c.height + 10);
-                    ctx2.lineTo((2 * i + 1) * 20, c.height + 10);
-                    ctx2.lineTo((2 * i + 1) * 20, -10);
-                }
-                ctx2.stroke();
-
-                ctx2.beginPath();
-                ctx2.strokeStyle = "#C3C3C3";
-                for (i = 0; Math.ceil(c.height / 40 + 1) > i; i++) {
-                    ctx2.lineTo(-10, 2 * i * 20);
-                    ctx2.lineTo(c.width + 10, 2 * i * 20);
-                    ctx2.lineTo(c.width + 10, (2 * i + 1) * 20);
-                    ctx2.lineTo(-10, (2 * i + 1) * 20);
-                }
-                ctx2.stroke();
-
-                ctx2.lineWidth = 4;
 
                 //update bullets every frame
                 for (i = 0; o.length > i; i++) {
@@ -338,11 +369,11 @@
                 //update tanks every frame
                 for (i = 0; o.length > i; i++) {
                     if (o[i].type == "tank") {
-                        o[i].draw();
-                        o[i].behavior();
                         for (i2 = 0; o.length > i2; i2++) {
                         o[i].collide(o[i2]);
                         }
+                        o[i].draw();
+                        o[i].behavior();
                     }
                     if (o[i].type == "death") {
                         o[i].draw2();
